@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import api from "@/lib/axios";
+import queryClient from "@/lib/queryClient";
 
 export interface User {
   id: number;
@@ -78,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("auth_token", access_token);
     setToken(access_token);
     setUser(userData);
+    queryClient.invalidateQueries({ queryKey: ["products"] });
   }, []);
 
   const logout = useCallback(async () => {
@@ -89,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("auth_token");
     setToken(null);
     setUser(null);
+    queryClient.invalidateQueries({ queryKey: ["products"] });
   }, []);
 
   const updateUser = useCallback((patch: Partial<User>) => {

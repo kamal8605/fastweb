@@ -21,6 +21,6 @@ export default function NewArrivalsPage() {
   return (
     <Suspense>
       <NewArrivalsInner />
-    </Suspense>
+    </Suspense> 
   );
 }
