@@ -3,9 +3,8 @@
 import {
   createContext,
   useContext,
-  useEffect,
-  useState,
   useCallback,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -33,33 +32,94 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 const STORAGE_KEY = "fastweb_cart";
+const EMPTY_CART: CartItem[] = [];
+const cartListeners = new Set<() => void>();
+let cachedRawCart: string | null | undefined;
+let cachedCartItems: CartItem[] = EMPTY_CART;
 
-function getStoredCartItems(): CartItem[] {
-  if (typeof window === "undefined") return [];
+function getCartSnapshot(): CartItem[] {
+  if (typeof window === "undefined") return EMPTY_CART;
 
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return [];
+    if (stored === cachedRawCart) return cachedCartItems;
+
+    cachedRawCart = stored;
+    if (!stored) {
+      cachedCartItems = EMPTY_CART;
+      return cachedCartItems;
+    }
+
     const parsed: unknown = JSON.parse(stored);
-    return Array.isArray(parsed) ? (parsed as CartItem[]) : [];
+    cachedCartItems = Array.isArray(parsed) ? (parsed as CartItem[]) : EMPTY_CART;
+    return cachedCartItems;
   } catch {
-    return [];
+    return cachedCartItems;
   }
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(getStoredCartItems);
+function getServerCartSnapshot() {
+  return EMPTY_CART;
+}
 
-  // Persist to localStorage whenever items change.
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+function subscribeToCart(listener: () => void) {
+  cartListeners.add(listener);
+
+  function handleStorage(event: StorageEvent) {
+    if (event.key === STORAGE_KEY) {
+      cachedRawCart = undefined;
+      listener();
     }
-  }, [items]);
+  }
+
+  window.addEventListener("storage", handleStorage);
+  return () => {
+    cartListeners.delete(listener);
+    window.removeEventListener("storage", handleStorage);
+  };
+}
+
+function writeCartItems(items: CartItem[]) {
+  const serialized = JSON.stringify(items);
+  cachedRawCart = serialized;
+  cachedCartItems = items;
+
+  try {
+    localStorage.setItem(STORAGE_KEY, serialized);
+  } catch {
+    // Keep the in-memory cart usable when browser storage is unavailable.
+  }
+
+  cartListeners.forEach((listener) => listener());
+}
+
+export function clearStoredCart() {
+  cachedRawCart = null;
+  cachedCartItems = EMPTY_CART;
+
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // The in-memory cart is still cleared when browser storage is unavailable.
+  }
+
+  cartListeners.forEach((listener) => listener());
+}
+
+function updateCartItems(updater: (items: CartItem[]) => CartItem[]) {
+  writeCartItems(updater(getCartSnapshot()));
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const items = useSyncExternalStore(
+    subscribeToCart,
+    getCartSnapshot,
+    getServerCartSnapshot
+  );
 
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity">, qty: number) => {
-      setItems((prev) => {
+      updateCartItems((prev) => {
         const existing = prev.find((i) => i.product_id === item.product_id);
         if (existing) {
           return prev.map((i) =>
@@ -76,9 +136,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQty = useCallback((product_id: number, qty: number) => {
     if (qty <= 0) {
-      setItems((prev) => prev.filter((i) => i.product_id !== product_id));
+      updateCartItems((prev) => prev.filter((i) => i.product_id !== product_id));
     } else {
-      setItems((prev) =>
+      updateCartItems((prev) =>
         prev.map((i) =>
           i.product_id === product_id ? { ...i, quantity: qty } : i
         )
@@ -87,10 +147,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeItem = useCallback((product_id: number) => {
-    setItems((prev) => prev.filter((i) => i.product_id !== product_id));
+    updateCartItems((prev) => prev.filter((i) => i.product_id !== product_id));
   }, []);
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => clearStoredCart(), []);
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);

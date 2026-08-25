@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { useBrands, type Brand } from "@/hooks/useBrands";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { useProducts, type Product } from "@/hooks/useProducts";
@@ -52,7 +53,6 @@ function formatPrice(value: number) {
     minimumFractionDigits: 2,
   }).format(value);
 }
-
 function BannerVisual({
   title,
   subtitle,
@@ -146,6 +146,18 @@ function ProductFallback({ label }: { label: string }) {
   );
 }
 
+function AddToCartIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M0 0h24v24H0z" fill="none" />
+      <circle cx="10.5" cy="19.5" r="1.5" fill="currentColor" />
+      <circle cx="17.5" cy="19.5" r="1.5" fill="currentColor" />
+      <path fill="currentColor" d="m14 13.99l4-5h-3v-4h-2v4h-3z" />
+      <path fill="currentColor" d="M17.31 15h-6.64L6.18 4.23A2 2 0 0 0 4.33 3H2v2h2.33l4.75 11.38A1 1 0 0 0 10 17h8a1 1 0 0 0 .93-.64L21.76 9h-2.14z" />
+    </svg>
+  );
+}
+
 function BrandLogo({ brand, index }: { brand?: Brand; index: number }) {
   const label = brand?.name ?? FALLBACK_BRANDS[index % FALLBACK_BRANDS.length];
 
@@ -186,6 +198,7 @@ function ProductCard({
   index: number;
   isAuthenticated: boolean;
 }) {
+  const { addItem } = useCart();
   const title = product?.name ?? fallbackName;
   const image = product?.image ?? product?.images?.find((img) => img.is_primary)?.url;
   const href = product ? `/product/${product.id}` : "/shop";
@@ -197,53 +210,63 @@ function ProductCard({
     product?.on_sale && product.regular_price && product.sale_price
       ? product.regular_price
       : null;
+  const canAdd = Boolean(product && product.type === "simple" && !soldOut && price !== null && isAuthenticated);
+
+  function handleAddToCart() {
+    if (!product || price === null) return;
+    addItem(
+      {
+        product_id: product.id,
+        name: product.name,
+        sku: product.sku,
+        image: image ?? null,
+        price,
+        parent_id: product.parent_id,
+      },
+      1
+    );
+  }
 
   return (
-    <Link
-      href={href}
-      className="group relative flex min-h-[380px] flex-col border-r border-brand-line bg-brand-white px-5 pb-5 pt-4 no-underline transition-colors hover:bg-brand-bg"
-    >
-      <div className="mb-2 min-h-[34px] text-[12px] uppercase leading-tight tracking-[0.01em] text-[#7A8DA3]">
-        {category}
-      </div>
-      <h3 className="min-h-[72px] text-[15px] font-black uppercase leading-[1.16] text-brand-blue group-hover:text-brand-blue-deep">
-        {title}
-      </h3>
+    <article className="product-card relative min-h-[400px] bg-white">
+      <div className="product-card-inner group relative z-0 flex min-h-[400px] flex-col bg-brand-white px-5 pb-5 pt-4 transition-shadow duration-200 after:pointer-events-none after:absolute after:bottom-4 after:right-0 after:top-4 after:w-px after:bg-[#E5E7EB] after:content-[''] hover:z-10 hover:bg-white hover:shadow-[0_3px_14px_rgba(0,0,0,0.22)] hover:outline hover:outline-1 hover:outline-[#E5E7EB] hover:after:opacity-0 focus-within:z-10 focus-within:bg-white focus-within:shadow-[0_3px_14px_rgba(0,0,0,0.22)] focus-within:outline focus-within:outline-1 focus-within:outline-[#E5E7EB] focus-within:after:opacity-0">
+      <Link href={href} className="no-underline">
+        <div className="mb-2 min-h-[34px] text-[12px] uppercase leading-tight tracking-[0.01em] text-[#7A8DA3]">
+          {category}
+        </div>
+        <h3 className="min-h-[72px] text-[15px] font-black uppercase leading-[1.16] text-brand-blue group-hover:text-brand-blue-deep">
+          {title}
+        </h3>
+      </Link>
 
-      <div className="relative mt-3 h-[180px] overflow-hidden bg-white">
-        {image ? (
-          <Image
-            src={image}
-            alt={title}
-            fill
-            sizes="(max-width: 768px) 50vw, 15vw"
-            className="object-contain transition-transform duration-300 group-hover:scale-105"
-            unoptimized
-          />
-        ) : (
-          <ProductFallback label="Product Image" />
-        )}
-      </div>
+      <Link href={href} className="relative mt-3 block h-[190px] overflow-hidden bg-white" aria-label={`View ${title}`}>
+        {image ? <Image src={image} alt={title} fill sizes="(max-width: 768px) 50vw, 15vw" className="object-contain" unoptimized /> : <ProductFallback label="Product Image" />}
+      </Link>
 
-      <div className="mt-auto flex min-h-[58px] items-end justify-center pt-4">
-        {isAuthenticated ? (
-          <span className="inline-flex min-w-[132px] flex-col items-center rounded-full bg-brand-navy px-6 py-2.5 text-center text-white shadow-sm">
-            <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-brand-orange">
-              Wholesale
-            </span>
-            <span className="text-[17px] font-black leading-tight">
-              {price !== null ? formatPrice(price) : "Price N/A"}
-            </span>
-            {regularPrice && (
-              <span className="text-[11px] leading-tight text-[#C8D2E5] line-through">
-                {formatPrice(regularPrice)}
-              </span>
-            )}
-          </span>
-        ) : (
-          <span className="rounded-full bg-brand-bg-alt px-6 py-3 text-[14px] font-semibold text-brand-muted transition-colors group-hover:bg-brand-navy group-hover:text-white">
+      <div className="mt-auto flex min-h-[70px] items-end justify-between gap-3 border-b border-transparent pb-3 pt-4 transition-colors group-hover:border-brand-line group-focus-within:border-brand-line">
+        {!isAuthenticated ? (
+          <Link href="/login" className="inline-flex min-h-11 w-full items-center justify-center rounded-none border-2 border-brand-navy bg-brand-navy px-4 py-2.5 text-[14px] font-bold text-white no-underline shadow-sm transition-all hover:border-brand-blue hover:bg-brand-blue hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2">
             Login to Buy
-          </span>
+          </Link>
+        ) : (
+          <>
+       <span className="inline-flex flex-col">
+              <span className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-brand-orange">Wholesale</span>
+              <span className="mt-1 text-[22px] font-medium leading-none text-[#374151]">
+                {price !== null ? formatPrice(price) : "Price N/A"}
+              </span>
+              {regularPrice && <span className="mt-1 text-[11px] leading-tight text-brand-muted line-through">{formatPrice(regularPrice)}</span>}
+            </span>
+
+            {canAdd && product ? (
+              <button type="button" onClick={handleAddToCart} className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-none border border-brand-navy bg-brand-navy text-white shadow-sm transition-all duration-200 hover:scale-105 hover:border-brand-blue hover:bg-brand-blue hover:shadow-md focus:border-brand-blue focus:bg-brand-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2" aria-label={`Add ${title} to cart`} title="Add to cart">
+                <AddToCartIcon />
+              </button>
+            ) : (
+              <Link href={href} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-none bg-[#E7E7E7] text-white no-underline transition-colors duration-200 group-hover:bg-[#17699B] group-focus-within:bg-[#17699B] hover:!bg-[#0F527D] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2" aria-label={`View ${title}`} title="View product">
+                <ArrowRight size={22} strokeWidth={3} />         </Link>
+            )}
+          </>
         )}
       </div>
 
@@ -253,11 +276,12 @@ function ProductCard({
         </span>
       )}
       {isNew && (
-        <span className="absolute left-0 top-0 bg-[#0FAE25] px-2 py-1 text-[13px] font-black text-white">
+        <span className="absolute right-0 top-0 bg-[#0FAE25] px-2 py-1 text-[13px] font-black text-white">
           New
         </span>
       )}
-    </Link>
+      </div>
+    </article>
   );
 }
 

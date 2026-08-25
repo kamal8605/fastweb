@@ -10,6 +10,7 @@ import {
 } from "react";
 import api from "@/lib/axios";
 import queryClient from "@/lib/queryClient";
+import { clearStoredCart } from "@/context/CartContext";
 
 export interface User {
   id: number;
@@ -89,9 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ignore errors — clear local state regardless
     }
     localStorage.removeItem("auth_token");
+    clearStoredCart();
     setToken(null);
     setUser(null);
-    queryClient.invalidateQueries({ queryKey: ["products"] });
+    queryClient.clear();
   }, []);
 
   const updateUser = useCallback((patch: Partial<User>) => {

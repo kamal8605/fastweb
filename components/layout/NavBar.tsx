@@ -1,105 +1,162 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { ShoppingCart, Search } from "lucide-react";
-import { useCart } from "@/context/CartContext";
-import { useCategories } from "@/hooks/useCategories";
+import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useBrands } from "@/hooks/useBrands";
+import { useCategories, type Category } from "@/hooks/useCategories";
 
-const NAV_LINKS = [
-  { label: "Apparel / Merch", href: "/shop" },
-  { label: "Hookah", href: "/shop" },
-  { label: "Glass / Accessories", href: "/shop" },
-  { label: "Cigar / Lighter Essentials", href: "/shop" },
-  { label: "Smoking Essentials", href: "/shop" },
-  { label: "Everyday Essentials", href: "/shop" },
-  { label: "Detox / Supplements / Health", href: "/shop" },
-  { label: "Shop By Brand", href: "/brands" },
-  { label: "Clearance", href: "/sale" },
-];
+const NAV_GROUPS = [
+  { label: "Apparel / Merch", keywords: ["apparel", "fashion", "merch"] },
+  { label: "Hookah", keywords: ["hookah"] },
+  { label: "CBD / Hemp", keywords: ["cbd", "hemp", "mushroom"] },
+  { label: "Botanicals", keywords: ["kratom", "botanical", "alkaloid", "hydroxy"] },
+  { label: "E-Juice / Vapes", keywords: ["juice", "nicotine", "vape", "disposable"] },
+  { label: "Glass / Accessories", keywords: ["glass", "bong", "pipe"] },
+  { label: "Smoking Essentials", keywords: ["rolling", "smoking", "paper", "cone"] },
+  { label: "Everyday Essentials", keywords: ["clean", "storage", "misc", "incense"] },
+] as const;
+
+function matches(category: Category, keywords: readonly string[]) {
+  const value = `${category.name} ${category.slug}`.toLowerCase();
+  return keywords.some((keyword) => value.includes(keyword));
+}
+function categoryItems(category: Category) {
+  return category.children && category.children.length > 0 ? category.children : [category];
+}
 
 export function NavBar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { itemCount } = useCart();
-  const { data: categories } = useCategories();
-  const [search, setSearch] = useState("");
-  const categoryLinks =
-    categories && categories.length > 0
-      ? categories.slice(0, 8).map((category) => ({
-          label: category.name,
-          href: `/category/${category.id}`,
-        }))
-      : NAV_LINKS;
+  const { data: categories = [] } = useCategories();
+  const { data: brands = [] } = useBrands();
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSection, setMobileSection] = useState<string | null>(null);
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (search.trim()) {
-      router.push(`/shop?search=${encodeURIComponent(search.trim())}`);
-      setSearch("");
-    }
-  }
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileOpen]);
 
-  function isActive(href: string) {
-    if (href === "/shop") return pathname === "/shop" || pathname.startsWith("/category") || pathname.startsWith("/product");
-    if (href === "/brands") return pathname === "/brands" || pathname.startsWith("/brand");
-    return pathname.startsWith(href);
-  }
+  const groups = useMemo(
+    () =>
+      NAV_GROUPS.map((group, index) => {
+        const matched = categories.filter((category) => matches(category, group.keywords));
+        const fallback = categories[index] ? [categories[index]] : [];
+        const roots = matched.length > 0 ? matched : fallback;
+        return {
+          ...group,
+          items: roots.flatMap(categoryItems).slice(0, 18),
+          href: roots[0] ? `/category/${roots[0].id}` : "/shop",
+        };
+      }),
+    [categories]
+  );
+
+  const activeMobileGroup = groups.find((group) => group.label === mobileSection);
 
   return (
-    <nav className="border-b border-brand-line bg-brand-navy">
-      <div className="flex items-center gap-5 overflow-x-auto px-4 py-4 lg:justify-center lg:px-8">
-        {categoryLinks.map(({ label, href }) => (
-          <Link
-            key={`${label}-${href}`}
-            href={href}
-            className={`shrink-0 whitespace-nowrap text-[12px] font-bold uppercase tracking-[0.02em] no-underline transition-colors ${
-              isActive(href)
-                ? "text-white"
-                : "text-[#C8D2E5] hover:text-white"
-            }`}
-          >
-            {label}
-          </Link>
+    <nav className="sticky top-0 z-40 border-b-[3px] border-brand-orange bg-brand-navy text-white shadow-[0_4px_14px_rgba(11,31,58,0.18)]">
+      <div className="mx-auto hidden max-w-[1500px] items-stretch justify-center xl:flex">
+        {groups.map((group) => (
+          <div key={group.label} className="static" onMouseEnter={() => setOpenMenu(group.label)} onMouseLeave={() => setOpenMenu(null)}>
+            <button type="button" onClick={() => setOpenMenu((value) => (value === group.label ? null : group.label))} onFocus={() => setOpenMenu(group.label)} className="flex h-full items-center gap-1 border-b-[3px] border-transparent px-3 py-4 text-[11px] font-extrabold uppercase tracking-[0.04em] transition-colors hover:border-brand-orange hover:bg-brand-blue-deep" aria-expanded={openMenu === group.label}>
+              {group.label}<ChevronDown size={12} />
+            </button>
+            {openMenu === group.label && (
+              <div className="absolute left-1/2 top-full w-[min(1120px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-b-xl border border-t-0 border-brand-blue bg-white text-brand-ink shadow-2xl">
+                <div className="grid grid-cols-[1fr_220px]">
+                  <div className="p-6">
+                    <div className="mb-4 flex items-center justify-between border-b border-brand-blue/25 pb-3">
+                      <h2 className="text-sm font-black uppercase tracking-[0.12em] text-brand-blue">{group.label}</h2>
+                      <Link href={group.href} onClick={() => setOpenMenu(null)} className="text-xs font-bold text-brand-blue hover:text-brand-blue-deep">View all</Link>
+                    </div>
+                    <div className="grid grid-cols-3 gap-x-6 gap-y-2">
+                      {group.items.length > 0 ? group.items.map((category) => (
+                        <Link key={category.id} href={`/category/${category.id}`} onClick={() => setOpenMenu(null)} className="flex min-h-12 items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-brand-ink no-underline hover:bg-brand-bg-alt hover:text-brand-blue">
+                          <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-brand-line bg-brand-bg">
+                            {category.image ? <Image src={category.image} alt="" fill sizes="36px" className="object-contain" unoptimized /> : <span className="flex h-full items-center justify-center text-xs font-black text-brand-blue">{category.name.slice(0, 1)}</span>}
+                          </span>
+                          <span>{category.name}</span>
+                        </Link>
+                      )) : <p className="col-span-3 py-8 text-sm text-brand-muted">Categories are loading…</p>}
+                    </div>
+                  </div>
+                  <Link href={group.href} onClick={() => setOpenMenu(null)} className="flex flex-col justify-end bg-gradient-to-br from-brand-bg-alt via-white to-brand-orange-soft p-6 no-underline">
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-brand-orange">Featured</span>
+                    <span className="mt-2 text-2xl font-black uppercase leading-tight text-brand-navy">{group.label}</span>
+                    <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold uppercase text-brand-blue">Shop now <ChevronRight size={14} /></span>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         ))}
-      </div>
 
-      <div className="flex flex-col items-stretch gap-3 border-t border-[#1E3358] bg-brand-bg px-4 py-3 md:flex-row md:items-center md:justify-center md:px-8">
-        <Link
-          href="/shop"
-          className="order-2 text-center font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-ink no-underline hover:text-brand-blue md:order-1"
-        >
-          Shop All
-        </Link>
-
-        <form onSubmit={handleSearch} className="relative md:order-2 md:ml-auto md:w-[360px]">
-          <Search
-            size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted"
-          />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search 12,400+ products"
-            className="h-[38px] w-full rounded-[var(--brand-radius)] border border-brand-line bg-brand-white pl-8 pr-3 text-[13px] text-brand-muted placeholder:text-brand-muted focus:border-brand-blue focus:outline-none"
-          />
-        </form>
-
-        <Link
-          href="/cart"
-          className="order-3 flex items-center justify-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-brand-ink no-underline transition-colors hover:text-brand-blue md:ml-2"
-        >
-          {itemCount > 0 && (
-            <span className="rounded-[var(--brand-radius)] bg-brand-orange px-1.5 py-0.5 font-mono text-[10px] leading-none text-brand-white">
-              {itemCount}
-            </span>
+        <div className="static" onMouseEnter={() => setOpenMenu("brands")} onMouseLeave={() => setOpenMenu(null)}>
+          <button type="button" onClick={() => setOpenMenu((value) => (value === "brands" ? null : "brands"))} className="flex h-full items-center gap-1 border-b-[3px] border-transparent px-3 py-4 text-[11px] font-extrabold uppercase tracking-[0.04em] hover:border-brand-orange hover:bg-brand-blue-deep">
+            Shop By Brand <ChevronDown size={12} />
+          </button>
+          {openMenu === "brands" && (
+            <div className="absolute left-1/2 top-full w-[min(1120px,calc(100vw-32px))] -translate-x-1/2 rounded-b-xl border border-t-0 border-brand-blue bg-white p-6 text-brand-ink shadow-2xl">
+              <div className="mb-4 flex items-center justify-between border-b border-brand-blue/25 pb-3">
+                <h2 className="text-sm font-black uppercase tracking-[0.12em] text-brand-blue">Shop By Brand</h2>
+                <Link href="/brands" onClick={() => setOpenMenu(null)} className="text-xs font-bold text-brand-blue">View all brands</Link>
+              </div>
+              <div className="grid grid-cols-6 gap-3">
+                {brands.slice(0, 12).map((brand) => (
+                  <Link key={brand.id} href={`/brand/${brand.id}`} onClick={() => setOpenMenu(null)} className="flex min-h-24 flex-col items-center justify-center rounded-lg border border-brand-line p-3 text-center text-xs font-bold text-brand-ink no-underline hover:border-brand-blue hover:bg-brand-bg">
+                    {brand.image ? <span className="relative mb-2 h-12 w-full"><Image src={brand.image} alt="" fill sizes="130px" className="object-contain" unoptimized /></span> : <span className="mb-2 text-xl font-black text-brand-blue">{brand.name.slice(0, 2)}</span>}
+                    {brand.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
-          <ShoppingCart size={16} />
-          Cart
-        </Link>
+        </div>
+        <Link href="/sale" className="flex items-center border-b-[3px] border-transparent px-3 py-4 text-[11px] font-black uppercase tracking-[0.04em] text-brand-orange no-underline hover:border-brand-orange hover:bg-brand-blue-deep hover:text-white">Clearance</Link>
+        <Link href="/shop" className="flex items-center border-b-[3px] border-transparent px-3 py-4 text-[11px] font-black uppercase tracking-[0.04em] text-white no-underline hover:border-brand-orange hover:bg-brand-blue-deep">Shop All</Link>
       </div>
+
+      <div className="flex items-center justify-between px-4 py-3 xl:hidden">
+        <button type="button" onClick={() => setMobileOpen(true)} className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-wider" aria-label="Open category menu"><Menu size={22} /> Menu</button>
+        <Link href="/sale" className="text-xs font-black uppercase tracking-wider text-brand-orange no-underline">Clearance</Link>
+      </div>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 xl:hidden">
+          <button className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} aria-label="Close menu" />
+          <div className="absolute inset-y-0 left-0 flex w-[min(88vw,360px)] flex-col bg-brand-navy shadow-2xl">
+            <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
+              <button type="button" onClick={() => setMobileSection(null)} className="text-xs font-bold uppercase tracking-wider text-white/70">{mobileSection ? "← Back" : "Categories"}</button>
+              <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close menu"><X size={24} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto py-2">
+              {activeMobileGroup ? (
+                <>
+                  <Link href={activeMobileGroup.href} onClick={() => setMobileOpen(false)} className="block border-b border-white/10 px-5 py-4 text-sm font-black uppercase text-white no-underline">Shop all {activeMobileGroup.label}</Link>
+                  {activeMobileGroup.items.map((category) => (
+                    <Link key={category.id} href={`/category/${category.id}`} onClick={() => setMobileOpen(false)} className="flex items-center gap-3 border-b border-white/10 px-5 py-3 text-sm text-white/85 no-underline">
+                      <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded bg-white/10">{category.image && <Image src={category.image} alt="" fill sizes="36px" className="object-contain" unoptimized />}</span>{category.name}
+                    </Link>
+                  ))}
+                </>
+              ) : (
+                <>
+                  {groups.map((group) => <button key={group.label} type="button" onClick={() => setMobileSection(group.label)} className="flex w-full items-center justify-between border-b border-white/10 px-5 py-4 text-left text-sm font-bold uppercase tracking-wide">{group.label}<ChevronRight size={17} className="text-white/50" /></button>)}
+                  <Link href="/brands" className="flex items-center justify-between border-b border-white/10 px-5 py-4 text-sm font-bold uppercase text-white no-underline">Shop By Brand<ChevronRight size={17} /></Link>
+                  <Link href="/sale" className="block border-b border-white/10 px-5 py-4 text-sm font-black uppercase text-red-300 no-underline">Clearance</Link>
+                  <Link href="/shop" className="block px-5 py-4 text-sm font-black uppercase text-white no-underline">Shop All</Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
