@@ -40,7 +40,7 @@ function SkeletonRow({ showBrand }: { showBrand: boolean }) {
     <tr className="border-b border-brand-line">
       {[...Array(showBrand ? 8 : 7)].map((_, i) => (
         <td key={i} className="px-2.5 py-2">
-          <div className="h-4 bg-brand-bg-alt rounded animate-pulse" />
+          <div className="h-4 bg-brand-bg-alt rounded-none animate-pulse" />
         </td>
       ))}
     </tr>
@@ -87,7 +87,7 @@ export function ProductTable({
             <span className="text-brand-muted line-through text-[11px]">${p.regular_price?.toFixed(2)}</span>
           </span>
         ) : (
-          <span className="font-mono font-semibold">
+          <span className="font-mono font-semibold text-brand-navy">
             {p.current_price !== null ? `$${p.current_price.toFixed(2)}` : "—"}
           </span>
         )}
@@ -153,7 +153,7 @@ export function ProductTable({
             <div className="flex items-center gap-2">
               <Link
                 href={`/product/${p.id}`}
-                className="font-medium text-brand-ink hover:text-brand-blue transition-colors"
+                className="font-semibold text-brand-blue hover:text-brand-blue-deep transition-colors"
               >
                 {p.name}
               </Link>
@@ -201,13 +201,22 @@ export function ProductTable({
 
           {/* Qty stepper */}
           <td className={`${TD} w-28 text-right`}>
-            {isGrouped ? (
+            {!p.prices_visible ? (
+              <Link
+                href="/login"
+                className="inline-flex min-h-8 items-center bg-brand-navy px-3 font-mono text-[10px] font-bold uppercase text-white no-underline hover:bg-brand-blue"
+              >
+                Login to Buy
+              </Link>
+            ) : isGrouped ? (
               <span className="text-brand-muted font-mono text-[11px]">— expand —</span>
+            ) : !p.in_stock ? (
+              <span className="font-mono text-[10px] uppercase text-brand-muted">Out of stock</span>
             ) : (
               <QtyStepper
                 value={qtyMap[p.id] ?? 0}
                 onChange={(n) => setQty(p.id, n)}
-                disabled={!p.in_stock}
+                max={p.stock_quantity ?? undefined}
               />
             )}
           </td>

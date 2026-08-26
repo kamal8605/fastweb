@@ -21,10 +21,10 @@ function SkeletonCard() {
     <div className="bg-brand-white border border-brand-line flex flex-col animate-pulse">
       <div className="aspect-square bg-brand-bg-alt" />
       <div className="p-3 space-y-2">
-        <div className="h-3 bg-brand-bg-alt rounded w-1/3" />
-        <div className="h-4 bg-brand-bg-alt rounded w-4/5" />
-        <div className="h-3 bg-brand-bg-alt rounded w-1/2" />
-        <div className="h-7 bg-brand-bg-alt rounded mt-3" />
+        <div className="h-3 bg-brand-bg-alt rounded-none w-1/3" />
+        <div className="h-4 bg-brand-bg-alt rounded-none w-4/5" />
+        <div className="h-3 bg-brand-bg-alt rounded-none w-1/2" />
+        <div className="h-7 bg-brand-bg-alt rounded-none mt-3" />
       </div>
     </div>
   );
@@ -74,7 +74,7 @@ export function ProductGrid({
             )}
           </span>
         ) : (
-          <span className="font-mono font-semibold text-[13px] text-brand-ink">
+          <span className="font-mono font-semibold text-[13px] text-brand-navy">
             {p.current_price !== null ? `$${p.current_price.toFixed(2)}` : "—"}
           </span>
         )}
@@ -94,7 +94,7 @@ export function ProductGrid({
 
   if (products.length === 0) {
     return (
-      <div className="py-16 text-center font-mono text-[11px] text-brand-muted tracking-[0.06em] uppercase bg-brand-white border border-brand-line mt-3">
+      <div className="mt-3 border border-brand-line border-t-2 border-t-brand-orange bg-brand-white py-16 text-center font-mono text-[11px] uppercase tracking-[0.06em] text-brand-muted">
         No products found
       </div>
     );
@@ -151,7 +151,7 @@ export function ProductGrid({
 
               <Link
                 href={`/product/${p.id}`}
-                className="text-[12.5px] font-medium text-brand-ink hover:text-brand-blue transition-colors leading-snug line-clamp-2"
+                className="text-[12.5px] font-bold uppercase text-brand-blue hover:text-brand-blue-deep transition-colors leading-snug line-clamp-2"
               >
                 {p.name}
               </Link>
@@ -164,18 +164,29 @@ export function ProductGrid({
               </div>
 
               <div className="pt-1">
-                {isGrouped ? (
+                {!p.prices_visible ? (
+                  <Link
+                    href="/login"
+                    className="block w-full border border-brand-navy bg-brand-navy py-2 text-center text-[11px] font-bold text-white no-underline transition-colors hover:bg-brand-blue"
+                  >
+                    Login to Buy
+                  </Link>
+                ) : isGrouped ? (
                   <Link
                     href={`/product/${p.id}`}
                     className="block w-full text-center font-mono text-[10.5px] tracking-[0.06em] uppercase text-brand-blue hover:text-brand-blue-deep transition-colors py-1.5 border border-brand-line hover:border-brand-blue"
                   >
                     {p.children!.length} variants →
                   </Link>
+                ) : !p.in_stock ? (
+                  <span className="block py-1.5 text-center font-mono text-[10.5px] uppercase text-brand-muted">
+                    Out of stock
+                  </span>
                 ) : (
                   <QtyStepper
                     value={qtyMap[p.id] ?? 0}
                     onChange={(n) => setQty(p.id, n)}
-                    disabled={!p.in_stock}
+                    max={p.stock_quantity ?? undefined}
                   />
                 )}
               </div>

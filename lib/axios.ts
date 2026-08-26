@@ -1,8 +1,23 @@
 import axios from "axios";
 
+export const AUTH_EXPIRED_EVENT = "fastweb:auth-expired";
+
+const API_ROOT = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/refresh",
+  "/auth/logout",
+];
+
 const api = axios.create({
-  baseURL: (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000") + "/api",
-  headers: { "Content-Type": "application/json" },
+  baseURL: `${API_ROOT}/api`,
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  },
 });
 
 // Attach auth token to every request
@@ -24,7 +39,14 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;
 
-    if (error.response?.status !== 401 || original._retry) {
+    if (!original) return Promise.reject(error);
+
+    const isAuthEndpoint = AUTH_ENDPOINTS_WITHOUT_REFRESH.some((endpoint) =>
+      String(original.url ?? "").includes(endpoint)
+    );
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+
+    if (error.response?.status !== 401 || original._retry || isAuthEndpoint || !token) {
       return Promise.reject(error);
     }
 
@@ -34,12 +56,12 @@ api.interceptors.response.use(
       if (!refreshPromise) {
         refreshPromise = axios
           .post(
-            (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000") +
-              "/api/auth/refresh",
+            `${API_ROOT}/api/auth/refresh`,
             {},
             {
               headers: {
-                Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`,
               },
             }
           )
@@ -59,7 +81,7 @@ api.interceptors.response.use(
     } catch {
       localStorage.removeItem("auth_token");
       if (typeof window !== "undefined") {
-        window.location.href = "/login";
+        window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
       }
       return Promise.reject(error);
     }

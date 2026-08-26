@@ -11,7 +11,7 @@ import {
 export interface CartItem {
   product_id: number;
   name: string;
-  sku: string;
+  sku: string | null;
   image: string | null;
   price: number;
   quantity: number;
@@ -37,6 +37,22 @@ const cartListeners = new Set<() => void>();
 let cachedRawCart: string | null | undefined;
 let cachedCartItems: CartItem[] = EMPTY_CART;
 
+function isCartItem(value: unknown): value is CartItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<CartItem>;
+  return (
+    Number.isInteger(item.product_id) &&
+    typeof item.name === "string" &&
+    (typeof item.sku === "string" || item.sku === null) &&
+    (typeof item.image === "string" || item.image === null) &&
+    typeof item.price === "number" &&
+    Number.isFinite(item.price) &&
+    item.price >= 0 &&
+    Number.isInteger(item.quantity) &&
+    Number(item.quantity) > 0
+  );
+}
+
 function getCartSnapshot(): CartItem[] {
   if (typeof window === "undefined") return EMPTY_CART;
 
@@ -51,7 +67,7 @@ function getCartSnapshot(): CartItem[] {
     }
 
     const parsed: unknown = JSON.parse(stored);
-    cachedCartItems = Array.isArray(parsed) ? (parsed as CartItem[]) : EMPTY_CART;
+    cachedCartItems = Array.isArray(parsed) ? parsed.filter(isCartItem) : EMPTY_CART;
     return cachedCartItems;
   } catch {
     return cachedCartItems;
@@ -119,28 +135,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity">, qty: number) => {
+      const safeQty = Math.max(0, Math.trunc(qty));
+      if (safeQty === 0 || !Number.isFinite(item.price) || item.price < 0) return;
       updateCartItems((prev) => {
         const existing = prev.find((i) => i.product_id === item.product_id);
         if (existing) {
           return prev.map((i) =>
             i.product_id === item.product_id
-              ? { ...i, quantity: i.quantity + qty }
+              ? { ...i, quantity: i.quantity + safeQty }
               : i
           );
         }
-        return [...prev, { ...item, quantity: qty }];
+        return [...prev, { ...item, quantity: safeQty }];
       });
     },
     []
   );
 
   const updateQty = useCallback((product_id: number, qty: number) => {
-    if (qty <= 0) {
+    const safeQty = Math.max(0, Math.trunc(qty));
+    if (safeQty <= 0) {
       updateCartItems((prev) => prev.filter((i) => i.product_id !== product_id));
     } else {
       updateCartItems((prev) =>
         prev.map((i) =>
-          i.product_id === product_id ? { ...i, quantity: qty } : i
+          i.product_id === product_id ? { ...i, quantity: safeQty } : i
         )
       );
     }

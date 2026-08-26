@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import api from "@/lib/axios";
 
 export default function ChangePasswordPage() {
-  const { isLoading } = useRequireAuth();
+  const { isLoading, isAuthenticated } = useRequireAuth();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -16,7 +16,7 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
-  if (isLoading) return null;
+  if (isLoading || !isAuthenticated) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

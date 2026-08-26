@@ -43,7 +43,7 @@ export function AgeVerification() {
         </p>
         {!denied ? (
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            <button type="button" onClick={approve} className="bg-brand-blue px-5 py-3 text-sm font-black uppercase tracking-wide text-white hover:bg-brand-blue-deep">Yes, I am 21+</button>
+            <button type="button" onClick={approve} className="bg-brand-navy px-5 py-3 text-sm font-black uppercase tracking-wide text-white hover:bg-brand-blue">Yes, I am 21+</button>
             <button type="button" onClick={() => setDenied(true)} className="border border-brand-line bg-brand-bg-alt px-5 py-3 text-sm font-black uppercase tracking-wide text-brand-muted hover:border-brand-navy">No, I am not 21</button>
           </div>
         ) : (

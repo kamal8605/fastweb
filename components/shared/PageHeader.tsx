@@ -11,7 +11,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ crumbs, title, accent, meta, actions }: PageHeaderProps) {
   return (
-    <div className="px-8 py-5 pb-4 border-b border-brand-line bg-brand-white">
+    <div className="border-b border-brand-line bg-brand-white px-4 pb-4 pt-5 sm:px-8">
       <div className="flex items-baseline justify-between gap-4 flex-wrap max-w-7xl mx-auto">
         <div className="flex items-baseline gap-4 flex-wrap">
           {crumbs && crumbs.length > 0 && <Breadcrumb items={crumbs} />}

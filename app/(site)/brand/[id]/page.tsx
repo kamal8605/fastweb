@@ -65,10 +65,7 @@ function BrandHero({ id }: { id: string }) {
       </div>
 
       {/* Hero — two-column */}
-      <div
-        className="grid border-b border-brand-line"
-        style={{ gridTemplateColumns: "1.2fr 1fr" }}
-      >
+      <div className="grid grid-cols-1 border-b border-brand-line lg:grid-cols-[1.2fr_1fr]">
         {/* Left: image with gradient overlay */}
         <div className="relative min-h-[280px] overflow-hidden">
           {brand.image ? (
@@ -90,7 +87,7 @@ function BrandHero({ id }: { id: string }) {
               {brand.location ?? "USA"}
               {brand.founded_year ? ` · EST. ${brand.founded_year}` : ""}
             </div>
-            <h1 className="font-serif text-[52px] leading-[0.95] font-normal tracking-tight m-0">
+            <h1 className="m-0 font-serif text-[38px] font-normal leading-[0.95] tracking-tight sm:text-[52px]">
               {brand.name}
             </h1>
           </div>
@@ -197,12 +194,24 @@ function BrandProducts({ id, brandName }: { id: string; brandName: string }) {
 }
 
 function BrandPageInner({ id }: { id: string }) {
-  const { data: brand } = useBrand(id);
+  const { data: brand, isLoading, isError, refetch } = useBrand(id);
+  const numericId = Number(id);
+
+  if (isLoading) return <div className="h-60 animate-pulse bg-brand-bg-alt" />;
+
+  if (!Number.isInteger(numericId) || numericId <= 0 || isError || !brand) {
+    return (
+      <div className="flex h-60 flex-col items-center justify-center gap-4 text-center">
+        <p className="font-mono text-[12px] text-brand-muted">Brand not found.</p>
+        {isError && <button type="button" onClick={() => refetch()} className="bg-brand-navy px-5 py-2 text-xs font-bold text-white">Try again</button>}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-brand-bg min-h-screen">
       <BrandHero id={id} />
-      <BrandProducts id={id} brandName={brand?.name ?? ""} />
+      <BrandProducts id={id} brandName={brand.name} />
     </div>
   );
 }

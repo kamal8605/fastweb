@@ -10,11 +10,11 @@ import { StockDot } from "@/components/shared/StockDot";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 function WishlistTable() {
-  const { isLoading: authLoading } = useRequireAuth();
-  const { data: items, isLoading } = useWishlist();
-  const toggle = useToggleWishlist();
+  const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
+  const { data: items, isLoading, isError, refetch } = useWishlist();
+  const { toggle, isPending } = useToggleWishlist();
 
-  if (authLoading || isLoading) {
+  if (authLoading || !isAuthenticated || isLoading) {
     return (
       <div className="overflow-x-auto">
         <table className="w-full border-collapse bg-brand-white">
@@ -23,7 +23,7 @@ function WishlistTable() {
               <tr key={i} className="border-b border-brand-line">
                 {Array.from({ length: 5 }).map((__, j) => (
                   <td key={j} className="px-4 py-3">
-                    <div className="h-4 bg-brand-bg-alt rounded animate-pulse" />
+                    <div className="h-4 bg-brand-bg-alt rounded-none animate-pulse" />
                   </td>
                 ))}
               </tr>
@@ -34,16 +34,25 @@ function WishlistTable() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="border border-brand-line border-t-2 border-t-red-600 bg-brand-white py-12 text-center">
+        <p className="font-mono text-[12px] text-brand-muted">Your wishlist could not be loaded.</p>
+        <button type="button" onClick={() => refetch()} className="mt-4 bg-brand-navy px-5 py-2 text-xs font-bold text-white hover:bg-brand-blue">Try again</button>
+      </div>
+    );
+  }
+
   if (!Array.isArray(items) || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-52 gap-4">
-        <Heart size={32} className="text-brand-muted" />
-        <p className="font-mono text-[12px] text-brand-muted">Your wishlist is empty.</p>
+      <div className="flex h-52 flex-col items-center justify-center gap-4 border border-brand-line border-t-2 border-t-brand-orange bg-brand-white">
+        <Heart size={32} className="text-brand-orange" />
+        <p className="font-mono text-[12px] uppercase tracking-[0.06em] text-brand-muted">Your wishlist is empty.</p>
         <Link
           href="/shop"
-          className="font-mono text-[11px] text-brand-blue hover:text-brand-blue-deep transition-colors"
+          className="bg-brand-navy px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.06em] text-white transition-colors hover:bg-brand-blue"
         >
-          → Browse products to save items
+          Browse products
         </Link>
       </div>
     );
@@ -134,6 +143,7 @@ function WishlistTable() {
               <td className={`${TD} text-center`}>
                 <button
                   onClick={() => toggle(item.product_id)}
+                  disabled={isPending}
                   className="text-brand-muted hover:text-[#B83434] transition-colors"
                   aria-label="Remove from wishlist"
                 >

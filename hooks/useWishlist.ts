@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
 
 export interface WishlistItem {
   id: number;
@@ -13,6 +14,8 @@ export interface WishlistItem {
 }
 
 export function useWishlist() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
   return useQuery<WishlistItem[]>({
     queryKey: ["wishlist"],
     queryFn: () =>
@@ -31,6 +34,7 @@ export function useWishlist() {
           }))
         ),
     staleTime: 2 * 60 * 1000,
+    enabled: !authLoading && isAuthenticated,
   });
 }
 
@@ -51,16 +55,22 @@ export function useToggleWishlist() {
 
   const removeMutation = useMutation({
     mutationFn: (productId: number) =>
-      api.delete(`/wishlist/${productId}`),
+      api.delete(`/wishlist/product/${productId}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["wishlist"] }),
+    onError: () => qc.invalidateQueries({ queryKey: ["wishlist"] }),
   });
 
-  return (productId: number) => {
+  const toggle = (productId: number) => {
     const isWishlisted = items.some((i) => i.product_id === productId);
     if (isWishlisted) {
-      return removeMutation.mutateAsync(productId);
+      removeMutation.mutate(productId);
     } else {
-      return addMutation.mutateAsync(productId);
+      addMutation.mutate(productId);
     }
+  };
+
+  return {
+    toggle,
+    isPending: addMutation.isPending || removeMutation.isPending,
   };
 }

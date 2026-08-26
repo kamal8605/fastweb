@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { X, SlidersHorizontal, LayoutList, LayoutGrid } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -20,6 +20,8 @@ const SORT_OPTIONS = [
   { value: "price_asc", label: "Price ↑" },
   { value: "price_desc", label: "Price ↓" },
 ] as const;
+
+const VALID_SORTS = new Set<ProductsParams["sort"]>(SORT_OPTIONS.map((option) => option.value));
 
 interface BrowseLayoutProps {
   categoryId?: number;
@@ -50,8 +52,11 @@ export function BrowseLayout({
   const searchParams = useSearchParams();
 
   // URL-driven state
-  const page = Number(searchParams.get("page") ?? 1);
-  const sort = (searchParams.get("sort") as ProductsParams["sort"]) ?? defaultSort;
+  const requestedPage = Number(searchParams.get("page") ?? 1);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const requestedSort = searchParams.get("sort") as ProductsParams["sort"];
+  const sort = requestedSort && VALID_SORTS.has(requestedSort) ? requestedSort : defaultSort;
+  const search = searchParams.get("search")?.trim() || undefined;
   const inStock = searchParams.get("in_stock") === "true";
   const activeBrandIds = searchParams.getAll("brand_id").map(Number).filter(Boolean);
   const subCatId = searchParams.get("sub_cat") ? Number(searchParams.get("sub_cat")) : undefined;
@@ -61,16 +66,30 @@ export function BrowseLayout({
   // Local state
   const [qtyMap, setQtyMap] = useState<Record<number, number>>({});
   const [brandSearch, setBrandSearch] = useState("");
-  const [view, setView] = useState<"list" | "grid">(() => {
-    if (typeof window === "undefined") return "list";
-    return (localStorage.getItem("fastweb_view") as "list" | "grid") ?? "list";
-  });
+  const [view, setView] = useState<"list" | "grid">("list");
   const { addItem } = useCart();
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const storedView = localStorage.getItem("fastweb_view");
+      if (storedView === "list" || storedView === "grid") setView(storedView);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function switchView(v: "list" | "grid") {
     setView(v);
     setQtyMap({});
-    localStorage.setItem("fastweb_view", v);
+    try {
+      localStorage.setItem("fastweb_view", v);
+    } catch {
+      // The selected view still works when storage is unavailable.
+    }
   }
 
   // ── URL helpers ────────────────────────────────────────────────────────────
@@ -87,9 +106,7 @@ export function BrowseLayout({
     const p = new URLSearchParams(searchParams.toString());
     p.delete("brand_id");
     p.delete("page");
-    const next = activeBrandIds.includes(id)
-      ? activeBrandIds.filter((b) => b !== id)
-      : [...activeBrandIds, id];
+    const next = activeBrandIds.includes(id) ? [] : [id];
     next.forEach((b) => p.append("brand_id", String(b)));
     router.push(`${pathname}?${p.toString()}`);
   }
@@ -132,16 +149,18 @@ export function BrowseLayout({
     : (activeSidebarCat?.children ?? []);
 
   const params: ProductsParams = {
-    category_id: subCatId ?? catId ?? categoryId,
+    category_id: catId ?? categoryId,
+    sub_category_id: subCatId,
     brand_id: activeBrandIds.length >= 1 ? activeBrandIds[0] : undefined,
     in_stock: inStock || undefined,
+    search,
     sort,
     page,
     per_page: 48,
   };
   if (brandId) params.brand_id = brandId;
 
-  const { data, isLoading } = useProducts(params);
+  const { data, isLoading, isError, refetch } = useProducts(params);
 
   const products = useMemo(() => {
     const nextProducts = data?.data ?? [];
@@ -160,14 +179,15 @@ export function BrowseLayout({
   const handleAddToCart = useCallback(() => {
     products.forEach((p) => {
       const qty = qtyMap[p.id];
-      if (qty && qty > 0 && p.in_stock) {
+      const price = p.current_price ?? p.sale_price;
+      if (qty && qty > 0 && p.in_stock && p.prices_visible && price !== null) {
         addItem(
           {
             product_id: p.id,
             name: p.name,
             sku: p.sku,
             image: p.image,
-            price: p.current_price ?? p.sale_price ?? 0,
+            price,
             parent_id: p.parent_id,
             parent_name: null,
           },
@@ -236,9 +256,9 @@ export function BrowseLayout({
         </div>
       )}
 
-      <div className="flex px-8 pt-4 gap-6 max-w-[1600px] mx-auto">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-6 px-4 pt-4 sm:px-8 lg:flex-row">
         {/* ── Filters sidebar ──────────────────────────────── */}
-        <aside className="w-[220px] shrink-0 text-[12.5px]">
+        <aside className="w-full shrink-0 text-[12.5px] lg:w-[220px]">
           <div className="flex items-center justify-between pb-2 border-b border-brand-ink mb-3">
             <span className="font-mono text-[10px] tracking-[0.08em] uppercase flex items-center gap-1.5">
               <SlidersHorizontal size={11} />
@@ -356,7 +376,7 @@ export function BrowseLayout({
 
         {/* ── Main: toolbar + table + pagination ─────────── */}
         <main className="flex-1 min-w-0">
-          <div className="flex items-center justify-between py-2.5 border-b border-brand-ink mb-0">
+          <div className="mb-0 flex flex-col items-start justify-between gap-3 border-b border-brand-ink py-2.5 md:flex-row md:items-center">
             <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.04em] text-brand-muted uppercase flex-wrap">
               {meta && (
                 <span>
@@ -402,7 +422,7 @@ export function BrowseLayout({
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center border border-brand-line rounded-[var(--brand-radius)] overflow-hidden">
                 <button
                   onClick={() => switchView("list")}
@@ -445,7 +465,12 @@ export function BrowseLayout({
             </div>
           </div>
 
-          {view === "grid" ? (
+          {isError ? (
+            <div className="mt-3 border border-brand-line border-t-2 border-t-red-600 bg-brand-white px-5 py-12 text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-brand-muted">Products could not be loaded.</p>
+              <button type="button" onClick={() => refetch()} className="mt-4 bg-brand-navy px-5 py-2.5 text-[11px] font-bold uppercase text-white hover:bg-brand-blue">Try again</button>
+            </div>
+          ) : view === "grid" ? (
             <ProductGrid
               products={products}
               showBrand={!brandId}
@@ -463,7 +488,7 @@ export function BrowseLayout({
             />
           )}
 
-          {meta && meta.last_page > 1 && (
+          {!isError && meta && meta.last_page > 1 && (
             <div className="flex justify-center mt-6">
               <Pagination
                 currentPage={meta.current_page}

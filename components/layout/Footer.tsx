@@ -1,14 +1,25 @@
 import { Mail, MapPin, Phone, Send } from "lucide-react";
+import Link from "next/link";
 import { Logo } from "./Logo";
 
 const COLUMNS = [
   {
     heading: "Find It Fast",
-    links: ["Cigar Accessories", "Cleaning Products", "Detox Supplements", "Category Directory"],
+    links: [
+      { label: "Cigar Accessories", href: "/shop?search=cigar%20accessories" },
+      { label: "Cleaning Products", href: "/shop?search=cleaning" },
+      { label: "Detox Supplements", href: "/shop?search=detox" },
+      { label: "Category Directory", href: "/shop" },
+    ],
   },
   {
     heading: "Customer Support",
-    links: ["My Account", "Track your Order", "Category Directory", "Contact Us"],
+    links: [
+      { label: "My Account", href: "/account/profile" },
+      { label: "Track your Order", href: "/orders" },
+      { label: "Category Directory", href: "/shop" },
+      { label: "Contact Us", href: "mailto:support@forgesmokedistro.com" },
+    ],
   },
 ];
 
@@ -92,13 +103,13 @@ export function Footer() {
             </h4>
             <ul className="space-y-3.5 text-[14px] leading-6">
               {col.links.map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
                     className="text-brand-muted no-underline transition-colors hover:text-brand-blue"
                   >
-                    {item}
-                  </a>
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>

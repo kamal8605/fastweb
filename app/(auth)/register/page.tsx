@@ -120,7 +120,7 @@ export default function RegisterPage() {
             </div>
             <Link
               href="/login"
-              className="mt-2 inline-flex items-center gap-2 bg-brand-ink text-brand-white font-semibold text-[13px] px-5 py-2.5 rounded-[var(--brand-radius)] hover:bg-brand-navy transition-colors"
+              className="mt-2 inline-flex items-center gap-2 bg-brand-navy text-brand-white font-semibold text-[13px] px-5 py-2.5 rounded-[var(--brand-radius)] hover:bg-brand-blue transition-colors"
             >
               Back to sign in
             </Link>
@@ -222,7 +222,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-10 bg-brand-ink text-brand-white font-semibold text-[13px] rounded-[var(--brand-radius)] hover:bg-brand-navy transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed mt-1"
+                className="w-full h-10 bg-brand-navy text-brand-white font-semibold text-[13px] rounded-[var(--brand-radius)] hover:bg-brand-blue transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed mt-1"
               >
                 {loading && <Loader2 size={14} className="animate-spin" />}
                 Submit application

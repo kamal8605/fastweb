@@ -32,11 +32,11 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 }
 
 function OrdersTable() {
-  const { isLoading } = useRequireApproved();
+  const { isLoading, isAuthenticated, isApproved } = useRequireApproved();
   const [page, setPage] = useState(1);
-  const { data, isLoading: ordersLoading } = useOrders(page);
+  const { data, isLoading: ordersLoading, isError, refetch } = useOrders(page);
 
-  if (isLoading || ordersLoading) {
+  if (isLoading || !isAuthenticated || !isApproved || ordersLoading) {
     return (
       <div className="overflow-x-auto">
         <table className="w-full border-collapse bg-brand-white">
@@ -45,7 +45,7 @@ function OrdersTable() {
               <tr key={i} className="border-b border-brand-line">
                 {Array.from({ length: 5 }).map((__, j) => (
                   <td key={j} className="px-4 py-3">
-                    <div className="h-4 bg-brand-bg-alt rounded animate-pulse" />
+                    <div className="h-4 bg-brand-bg-alt rounded-none animate-pulse" />
                   </td>
                 ))}
               </tr>
@@ -56,15 +56,24 @@ function OrdersTable() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="border border-brand-line border-t-2 border-t-red-600 bg-brand-white py-12 text-center">
+        <p className="font-mono text-[12px] text-brand-muted">Orders could not be loaded.</p>
+        <button type="button" onClick={() => refetch()} className="mt-4 bg-brand-navy px-5 py-2 text-xs font-bold text-white hover:bg-brand-blue">Try again</button>
+      </div>
+    );
+  }
+
   const orders = data?.data ?? [];
   const meta = data?.meta;
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-40 gap-3">
-        <p className="font-mono text-[12px] text-brand-muted">No orders yet.</p>
-        <Link href="/shop" className="font-mono text-[11px] text-brand-blue hover:text-brand-blue-deep">
-          → Browse products
+      <div className="flex h-40 flex-col items-center justify-center gap-3 border border-brand-line border-t-2 border-t-brand-orange bg-brand-white">
+        <p className="font-mono text-[12px] uppercase tracking-[0.06em] text-brand-muted">No orders yet.</p>
+        <Link href="/shop" className="bg-brand-navy px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.06em] text-white transition-colors hover:bg-brand-blue">
+          Browse products
         </Link>
       </div>
     );
@@ -109,9 +118,9 @@ function OrdersTable() {
                 </td>
                 <td className={TD}>
                   <span
-                    className={`font-mono text-[11.5px] capitalize ${PAYMENT_STYLES[order.payment_status] ?? "text-brand-muted"}`}
+                    className={`font-mono text-[11.5px] capitalize ${order.payment_status ? PAYMENT_STYLES[order.payment_status] : "text-brand-muted"}`}
                   >
-                    {order.payment_status}
+                    {order.payment_status ?? "—"}
                   </span>
                 </td>
                 <td className={`${TD} text-right font-mono font-semibold`}>

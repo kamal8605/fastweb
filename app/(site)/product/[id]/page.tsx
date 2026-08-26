@@ -1,9 +1,9 @@
 "use client";
 
-import { use, useState, useCallback, Suspense } from "react";
+import { use, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, GitCompare, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useProduct } from "@/hooks/useProducts";
 import { type Product } from "@/hooks/useProducts";
 import { useCart } from "@/context/CartContext";
@@ -12,7 +12,10 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PriceGate } from "@/components/shared/PriceGate";
 import { StockDot } from "@/components/shared/StockDot";
 import { CartBar } from "@/components/shared/CartBar";
-import api from "@/lib/axios";
+import {
+  useToggleWishlist,
+  useWishlist as useWishlistItems,
+} from "@/hooks/useWishlist";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -138,11 +141,15 @@ function QtyStepper({
   value,
   onChange,
   disabled,
+  max,
 }: {
   value: number;
   onChange: (n: number) => void;
   disabled?: boolean;
+  max?: number | null;
 }) {
+  const reachedMax = max !== null && max !== undefined && value >= max;
+
   return (
     <div className="inline-flex items-center border border-brand-line">
       <button
@@ -156,8 +163,8 @@ function QtyStepper({
         {value}
       </span>
       <button
-        onClick={() => onChange(value + 1)}
-        disabled={disabled}
+        onClick={() => onChange(max == null ? value + 1 : Math.min(max, value + 1))}
+        disabled={disabled || reachedMax}
         className="w-8 h-8 flex items-center justify-center font-mono text-[14px] text-brand-ink hover:bg-brand-bg-alt transition-colors disabled:opacity-30"
       >
         +
@@ -171,8 +178,20 @@ function QtyStepper({
 function SimpleAddToCart({ product }: { product: Product }) {
   const [qty, setQty] = useState(0);
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
 
-  const price = product.current_price ?? product.sale_price ?? 0;
+  const price = product.current_price ?? product.sale_price;
+
+  if (!isAuthenticated || !product.prices_visible || price === null) {
+    return (
+      <Link
+        href="/login"
+        className="mt-4 inline-flex min-h-10 w-full items-center justify-center bg-brand-navy px-5 text-sm font-bold text-white no-underline transition-colors hover:bg-brand-blue"
+      >
+        Login to Buy
+      </Link>
+    );
+  }
 
   const handleAdd = () => {
     if (qty === 0) return;
@@ -193,7 +212,12 @@ function SimpleAddToCart({ product }: { product: Product }) {
 
   return (
     <div className="flex items-center gap-3 mt-4">
-      <QtyStepper value={qty} onChange={setQty} disabled={!product.in_stock} />
+      <QtyStepper
+        value={qty}
+        onChange={setQty}
+        disabled={!product.in_stock}
+        max={product.stock_quantity}
+      />
       <button
         onClick={handleAdd}
         disabled={qty === 0 || !product.in_stock}
@@ -211,6 +235,7 @@ function GroupedVariantTable({ product }: { product: Product }) {
   const children = product.children ?? [];
   const [qtys, setQtys] = useState<Record<number, number>>({});
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
 
   const setQty = (id: number, qty: number) =>
     setQtys((prev) => ({ ...prev, [id]: qty }));
@@ -221,7 +246,8 @@ function GroupedVariantTable({ product }: { product: Product }) {
     children.forEach((child) => {
       const qty = qtys[child.id] ?? 0;
       if (qty === 0) return;
-      const price = child.current_price ?? child.sale_price ?? 0;
+      const price = child.current_price ?? child.sale_price;
+      if (!child.in_stock || price === null) return;
       addItem(
         {
           product_id: child.id,
@@ -247,6 +273,20 @@ function GroupedVariantTable({ product }: { product: Product }) {
     );
   }
 
+  if (!isAuthenticated || !product.prices_visible) {
+    return (
+      <div className="mt-6 border border-brand-line bg-brand-white p-5">
+        <p className="text-sm text-brand-muted">Sign in to view wholesale prices and order variants.</p>
+        <Link
+          href="/login"
+          className="mt-3 inline-flex min-h-10 items-center justify-center bg-brand-navy px-5 text-sm font-bold text-white no-underline transition-colors hover:bg-brand-blue"
+        >
+          Login to Buy
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-6">
       <div className="font-mono text-[10px] tracking-[0.08em] uppercase text-brand-muted border-b border-brand-ink pb-2 mb-0">
@@ -267,7 +307,7 @@ function GroupedVariantTable({ product }: { product: Product }) {
           <tbody>
             {children.map((child) => {
               const qty = qtys[child.id] ?? 0;
-              const price = child.current_price ?? child.sale_price ?? 0;
+              const price = child.current_price ?? child.sale_price;
               return (
                 <tr key={child.id} className="hover:bg-brand-bg-alt/50 transition-colors">
                   <td className={TD}>
@@ -290,7 +330,7 @@ function GroupedVariantTable({ product }: { product: Product }) {
                     <PriceGate pricesVisible={child.prices_visible}>
                       {child.on_sale && child.sale_price !== null ? (
                         <span className="text-[#B83434] font-semibold">${child.sale_price.toFixed(2)}</span>
-                      ) : price > 0 ? (
+                      ) : price !== null ? (
                         <span>${price.toFixed(2)}</span>
                       ) : (
                         <span className="text-brand-muted">—</span>
@@ -301,10 +341,15 @@ function GroupedVariantTable({ product }: { product: Product }) {
                     <StockDot inStock={child.in_stock} stockQuantity={child.stock_quantity} />
                   </td>
                   <td className={`${TD} text-right`}>
-                    <QtyStepper value={qty} onChange={(n) => setQty(child.id, n)} disabled={!child.in_stock} />
+                    <QtyStepper
+                      value={qty}
+                      onChange={(n) => setQty(child.id, n)}
+                      disabled={!child.in_stock || price === null}
+                      max={child.stock_quantity}
+                    />
                   </td>
                   <td className={`${TD} text-right font-mono text-brand-ink`}>
-                    {qty > 0 && price > 0 ? `$${(qty * price).toFixed(2)}` : "—"}
+                    {qty > 0 && price !== null ? `$${(qty * price).toFixed(2)}` : "—"}
                   </td>
                 </tr>
               );
@@ -333,7 +378,7 @@ function GroupedVariantTable({ product }: { product: Product }) {
 
 // ─── Spec Strip ──────────────────────────────────────────────────────────────
 
-function SpecStrip({ attributes }: { attributes?: Record<string, string> }) {
+function SpecStrip({ attributes }: { attributes?: Record<string, string> | null }) {
   if (!attributes || Object.keys(attributes).length === 0) return null;
 
   const entries = Object.entries(attributes);
@@ -361,50 +406,26 @@ function SpecStrip({ attributes }: { attributes?: Record<string, string> }) {
 
 // ─── Wishlist ────────────────────────────────────────────────────────────────
 
-function useWishlist(productId: number) {
-  const [wishlisted, setWishlisted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { isAuthenticated } = useAuth();
-
-  const toggle = useCallback(async () => {
-    if (!isAuthenticated) return;
-    setLoading(true);
-    try {
-      if (wishlisted) {
-        await api.delete(`/wishlist/${productId}`);
-        setWishlisted(false);
-      } else {
-        await api.post("/wishlist", { product_id: productId });
-        setWishlisted(true);
-      }
-    } catch {
-      // silently ignore — wishlist is non-critical
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated, productId, wishlisted]);
-
-  return { wishlisted, loading, toggle };
-}
-
 // ─── Main Product Detail ──────────────────────────────────────────────────────
 
 function ProductDetail({ id }: { id: string }) {
   const { data: product, isLoading, isError } = useProduct(id);
-  const { wishlisted, loading: wishlistLoading, toggle: toggleWishlist } = useWishlist(Number(id));
+  const { data: wishlistItems = [] } = useWishlistItems();
+  const { toggle: toggleWishlist, isPending: wishlistLoading } = useToggleWishlist();
   const { isAuthenticated } = useAuth();
+  const wishlisted = wishlistItems.some((item) => item.product_id === Number(id));
 
   if (isLoading) {
     return (
       <div className="animate-pulse">
         <div className="h-10 bg-brand-bg-alt border-b border-brand-line" />
-        <div className="grid grid-cols-2 gap-8 p-8">
+        <div className="grid grid-cols-1 gap-8 p-5 sm:p-8 lg:grid-cols-2">
           <div className="aspect-[4/3] bg-brand-bg-alt" />
           <div className="space-y-4">
-            <div className="h-4 bg-brand-bg-alt rounded w-1/3" />
-            <div className="h-8 bg-brand-bg-alt rounded w-3/4" />
-            <div className="h-4 bg-brand-bg-alt rounded w-1/4" />
-            <div className="h-6 bg-brand-bg-alt rounded w-1/3" />
+            <div className="h-4 bg-brand-bg-alt rounded-none w-1/3" />
+            <div className="h-8 bg-brand-bg-alt rounded-none w-3/4" />
+            <div className="h-4 bg-brand-bg-alt rounded-none w-1/4" />
+            <div className="h-6 bg-brand-bg-alt rounded-none w-1/3" />
           </div>
         </div>
       </div>
@@ -440,14 +461,14 @@ function ProductDetail({ id }: { id: string }) {
       </div>
 
       {/* Hero */}
-      <div className="grid gap-0 border-b border-brand-line" style={{ gridTemplateColumns: "1fr 1fr" }}>
+      <div className="grid grid-cols-1 gap-0 border-b border-brand-line lg:grid-cols-2">
         {/* Left: images */}
-        <div className="p-8 border-r border-brand-line bg-brand-white">
+        <div className="border-b border-brand-line bg-brand-white p-4 sm:p-8 lg:border-b-0 lg:border-r">
           <ImageGallery images={images} name={product.name} />
         </div>
 
         {/* Right: summary */}
-        <div className="p-8 bg-brand-white">
+        <div className="bg-brand-white p-4 sm:p-8">
           {/* Brand */}
           {product.brand && (
             <Link
@@ -493,32 +514,34 @@ function ProductDetail({ id }: { id: string }) {
           )}
 
           {/* Simple product: qty + add to cart */}
-          {product.type === "simple" && <SimpleAddToCart product={product} />}
+          {product.type !== "grouped" && <SimpleAddToCart product={product} />}
 
           {/* Actions */}
           <div className="mt-5 flex items-center gap-4 pt-4 border-t border-brand-line">
-            <button
-              onClick={() => { if (isAuthenticated) toggleWishlist(); }}
-              disabled={wishlistLoading}
-              title={isAuthenticated ? (wishlisted ? "Remove from wishlist" : "Add to wishlist") : "Sign in to wishlist"}
-              className={`flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.06em] uppercase transition-colors disabled:opacity-50 ${
-                wishlisted ? "text-[#B83434]" : "text-brand-muted hover:text-brand-ink"
-              }`}
-            >
-              <Heart size={13} fill={wishlisted ? "currentColor" : "none"} />
-              {wishlisted ? "Wishlisted" : "Wishlist"}
-            </button>
-            <button className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.06em] uppercase text-brand-muted hover:text-brand-ink transition-colors">
-              <GitCompare size={13} />
-              Compare
-            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={() => toggleWishlist(product.id)}
+                disabled={wishlistLoading}
+                title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                className={`flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.06em] uppercase transition-colors disabled:opacity-50 ${
+                  wishlisted ? "text-[#B83434]" : "text-brand-muted hover:text-brand-ink"
+                }`}
+              >
+                <Heart size={13} fill={wishlisted ? "currentColor" : "none"} />
+                {wishlisted ? "Wishlisted" : "Wishlist"}
+              </button>
+            ) : (
+              <Link href="/login" className="flex items-center gap-1.5 font-mono text-[10.5px] uppercase text-brand-blue">
+                <Heart size={13} /> Sign in to wishlist
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
       {/* Grouped variant table */}
       {product.type === "grouped" && (
-        <div className="px-8 py-6">
+        <div className="px-4 py-6 sm:px-8">
           <GroupedVariantTable product={product} />
         </div>
       )}
@@ -527,7 +550,7 @@ function ProductDetail({ id }: { id: string }) {
       <SpecStrip attributes={product.attributes} />
 
       {/* CartBar for simple products */}
-      {product.type === "simple" && <CartBar />}
+      {product.type !== "grouped" && product.prices_visible && <CartBar />}
     </div>
   );
 }

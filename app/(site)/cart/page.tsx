@@ -21,7 +21,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
           <div key={label} className="flex items-center">
             <div className="flex items-center gap-2 px-4 py-2.5">
               <span
-                className={`w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] shrink-0 ${
+                className={`w-5 h-5 rounded-none flex items-center justify-center font-mono text-[10px] shrink-0 ${
                   active
                     ? "bg-brand-orange text-white"
                     : done
@@ -97,11 +97,11 @@ function QtyStepper({
 // ─── Cart Page ────────────────────────────────────────────────────────────
 
 export default function CartPage() {
-  const { isLoading } = useRequireAuth();
+  const { isLoading, isAuthenticated } = useRequireAuth();
   const { isApproved } = useAuth();
   const { items, itemCount, subtotal, updateQty, removeItem } = useCart();
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-60 font-mono text-[11px] text-brand-muted tracking-widest uppercase">
         Loading…
@@ -170,7 +170,7 @@ export default function CartPage() {
           </Link>
         </div>
       ) : (
-        <div className="px-8 py-6 flex gap-6 max-w-[1400px] mx-auto items-start">
+        <div className="mx-auto flex max-w-[1400px] flex-col items-start gap-6 px-4 py-6 sm:px-8 lg:flex-row">
           {/* Left — Cart groups */}
           <div className="flex-1 min-w-0 space-y-6">
             {groups.map((group) => {
@@ -282,7 +282,7 @@ export default function CartPage() {
           </div>
 
           {/* Right — Order summary */}
-          <div className="w-[300px] shrink-0 bg-brand-white border border-brand-line">
+          <div className="w-full shrink-0 border border-brand-line bg-brand-white lg:w-[300px]">
             <div className="px-5 py-4 border-b border-brand-ink">
               <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-brand-muted">
                 Order summary

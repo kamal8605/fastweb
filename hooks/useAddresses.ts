@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
 
 export interface Address {
   id: number;
@@ -20,6 +21,8 @@ export interface Address {
 export type NewAddress = Omit<Address, "id"> & { is_default?: boolean };
 
 export function useAddresses() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
   return useQuery<Address[]>({
     queryKey: ["addresses"],
     queryFn: () =>
@@ -27,6 +30,7 @@ export function useAddresses() {
         Array.isArray(r.data) ? r.data : r.data.data
       ),
     staleTime: 5 * 60 * 1000,
+    enabled: !authLoading && isAuthenticated,
   });
 }
 

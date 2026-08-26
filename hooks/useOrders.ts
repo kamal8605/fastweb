@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
 
 export type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
 export type PaymentStatus = "due" | "paid" | "refunded";
@@ -31,7 +32,7 @@ export interface Order {
   id: number;
   invoice_no: string;
   status: OrderStatus;
-  payment_status: PaymentStatus;
+  payment_status: PaymentStatus | null;
   customer_note?: string | null;
   line_total: number;
   discount_total?: number;
@@ -78,6 +79,8 @@ function parseOrder(raw: Record<string, unknown>): Order {
 }
 
 export function useOrders(page = 1) {
+  const { isAuthenticated, isApproved, isLoading: authLoading } = useAuth();
+
   return useQuery<OrdersResponse>({
     queryKey: ["orders", page],
     queryFn: () =>
@@ -87,16 +90,20 @@ export function useOrders(page = 1) {
         })
         .then((r) => ({ data: r.data.data.map(parseOrder), meta: r.data.meta })),
     staleTime: 2 * 60 * 1000,
+    enabled: !authLoading && isAuthenticated && isApproved,
   });
 }
 
 export function useOrder(id: number | string) {
+  const { isAuthenticated, isApproved, isLoading: authLoading } = useAuth();
+  const hasValidId = Number.isInteger(Number(id)) && Number(id) > 0;
+
   return useQuery<Order>({
     queryKey: ["order", id],
     queryFn: () =>
       api
         .get<Record<string, unknown>>(`/orders/${id}`)
         .then((r) => parseOrder(r.data)),
-    enabled: !!id,
+    enabled: hasValidId && !authLoading && isAuthenticated && isApproved,
   });
 }

@@ -24,9 +24,10 @@ export function useBrands() {
 }
 
 export function useBrand(id: number | string) {
+  const enabled = Number.isInteger(Number(id)) && Number(id) > 0;
   return useQuery<Brand>({
     queryKey: ["brand", id],
     queryFn: () => api.get<Brand>(`/brands/${id}`).then((r) => r.data),
-    enabled: !!id,
+    enabled,
   });
 }

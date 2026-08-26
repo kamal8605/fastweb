@@ -22,7 +22,7 @@ const EMPTY_FORM: NewAddress = {
   city: "",
   state: "",
   postcode: "",
-  country: "AU",
+  country: "US",
   phone: "",
   is_default: false,
 };
@@ -51,7 +51,7 @@ function AddressForm({
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}
       className="space-y-4 bg-brand-bg-alt border border-brand-line rounded-[var(--brand-radius)] p-5"
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={LABEL}>First Name *</label>
           <input type="text" value={form.first_name} onChange={set("first_name")} className={INPUT} required maxLength={100} />
@@ -82,7 +82,7 @@ function AddressForm({
         <input type="text" value={form.address_2 ?? ""} onChange={set("address_2")} className={INPUT} maxLength={255} placeholder="Optional" />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={LABEL}>City *</label>
           <input type="text" value={form.city} onChange={set("city")} className={INPUT} required maxLength={100} />
@@ -93,7 +93,7 @@ function AddressForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={LABEL}>Postcode *</label>
           <input type="text" value={form.postcode} onChange={set("postcode")} className={INPUT} required maxLength={20} />
@@ -207,8 +207,8 @@ function AddressCard({
 }
 
 export default function AddressesPage() {
-  const { isLoading: authLoading } = useRequireAuth();
-  const { data: addresses, isLoading } = useAddresses();
+  const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
+  const { data: addresses, isLoading, isError, refetch } = useAddresses();
   const createAddress = useCreateAddress();
   const updateAddress = useUpdateAddress();
   const deleteAddress = useDeleteAddress();
@@ -217,14 +217,26 @@ export default function AddressesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  if (authLoading || isLoading) {
+  if (authLoading || !isAuthenticated || isLoading) {
     return (
       <div className="bg-brand-bg min-h-screen pb-20">
         <PageHeader crumbs={[{ label: "Account", href: "/account/profile" }, { label: "Addresses" }]} title="Manage Addresses" />
         <div className="px-8 py-8 max-w-2xl mx-auto space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="h-36 bg-brand-bg-alt rounded animate-pulse" />
+            <div key={i} className="h-36 bg-brand-bg-alt rounded-none animate-pulse" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-brand-bg min-h-screen pb-20">
+        <PageHeader crumbs={[{ label: "Account", href: "/account/profile" }, { label: "Addresses" }]} title="Manage Addresses" />
+        <div className="mx-auto max-w-2xl px-8 py-12 text-center">
+          <p className="font-mono text-[12px] text-brand-muted">Addresses could not be loaded.</p>
+          <button type="button" onClick={() => refetch()} className="mt-4 bg-brand-navy px-5 py-2 text-xs font-bold text-white hover:bg-brand-blue">Try again</button>
         </div>
       </div>
     );
@@ -239,6 +251,7 @@ export default function AddressesPage() {
   }
 
   function handleDelete(id: number) {
+    if (!window.confirm("Delete this address? This action cannot be undone.")) return;
     setDeletingId(id);
     deleteAddress.mutate(id, { onSettled: () => setDeletingId(null) });
   }

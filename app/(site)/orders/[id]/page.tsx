@@ -51,7 +51,7 @@ function StatusTracker({ status }: { status: OrderStatus }) {
           <div key={step} className="flex items-center">
             <div className="flex flex-col items-center gap-1 px-4">
               <span
-                className={`w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] shrink-0 ${
+                className={`w-5 h-5 rounded-none flex items-center justify-center font-mono text-[10px] shrink-0 ${
                   done
                     ? "bg-brand-navy text-white"
                     : active
@@ -102,15 +102,15 @@ function AddressBlock({ label, fields }: { label: string; fields: (string | null
 }
 
 function OrderDetail({ id }: { id: string }) {
-  useRequireApproved();
+  const { isLoading: authLoading, isAuthenticated, isApproved } = useRequireApproved();
   const { data: order, isLoading, isError } = useOrder(id);
 
-  if (isLoading) {
+  if (authLoading || !isAuthenticated || !isApproved || isLoading) {
     return (
       <div className="animate-pulse space-y-4 p-8">
-        <div className="h-6 bg-brand-bg-alt rounded w-1/4" />
-        <div className="h-4 bg-brand-bg-alt rounded w-1/3" />
-        <div className="h-32 bg-brand-bg-alt rounded" />
+        <div className="h-6 bg-brand-bg-alt rounded-none w-1/4" />
+        <div className="h-4 bg-brand-bg-alt rounded-none w-1/3" />
+        <div className="h-32 bg-brand-bg-alt rounded-none" />
       </div>
     );
   }
@@ -142,7 +142,7 @@ function OrderDetail({ id }: { id: string }) {
       </div>
 
       {/* Order header */}
-      <div className="px-8 py-6 border-b border-brand-line bg-brand-white flex items-start justify-between gap-6">
+      <div className="flex flex-col items-start justify-between gap-6 border-b border-brand-line bg-brand-white px-4 py-6 sm:px-8 lg:flex-row">
         <div>
           <h1 className="font-serif text-[36px] font-normal text-brand-ink leading-none">
             {order.invoice_no}
@@ -163,7 +163,7 @@ function OrderDetail({ id }: { id: string }) {
 
       <div className="px-8 py-6 max-w-5xl mx-auto space-y-6">
         {/* Addresses */}
-        <div className="bg-brand-white border border-brand-line p-6 grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 border border-brand-line bg-brand-white p-6 sm:grid-cols-2">
           <AddressBlock
             label="Billing address"
             fields={[

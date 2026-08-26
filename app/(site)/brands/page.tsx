@@ -14,7 +14,7 @@ function Placeholder({ label }: { label: string }) {
         background: "repeating-linear-gradient(135deg, #E5DFD0 0 14px, #D9D3C5 14px 28px)",
       }}
     >
-      <span className="font-mono text-[10px] tracking-[0.08em] uppercase px-2 py-1 text-brand-muted bg-brand-bg/90 rounded-[2px]">
+      <span className="font-mono text-[10px] tracking-[0.08em] uppercase px-2 py-1 text-brand-muted bg-brand-bg/90 rounded-none">
         {label}
       </span>
     </div>
@@ -39,8 +39,8 @@ export default function BrandsPage() {
               <div key={i} className="bg-brand-white border border-brand-line animate-pulse">
                 <div className="aspect-[4/3] bg-brand-bg-alt" />
                 <div className="p-4 space-y-2">
-                  <div className="h-4 bg-brand-bg-alt rounded w-3/4" />
-                  <div className="h-3 bg-brand-bg-alt rounded w-1/2" />
+                  <div className="h-4 bg-brand-bg-alt rounded-none w-3/4" />
+                  <div className="h-3 bg-brand-bg-alt rounded-none w-1/2" />
                 </div>
               </div>
             ))}

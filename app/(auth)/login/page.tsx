@@ -121,9 +121,9 @@ export default function LoginPage() {
               <label className="block text-[12px] font-semibold text-brand-ink">
                 Password
               </label>
-              <a href="#" className="text-[11px] text-brand-blue hover:text-brand-blue-deep transition-colors">
+              <Link href="/forgot-password" className="text-[11px] text-brand-blue hover:text-brand-blue-deep transition-colors">
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <input
               type="password"
@@ -139,7 +139,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-10 bg-brand-ink text-brand-white font-semibold text-[13px] rounded-[var(--brand-radius)] hover:bg-brand-navy transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            className="w-full h-10 bg-brand-navy text-brand-white font-semibold text-[13px] rounded-[var(--brand-radius)] hover:bg-brand-blue transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
           >
             {loading && <Loader2 size={14} className="animate-spin" />}
             Sign in

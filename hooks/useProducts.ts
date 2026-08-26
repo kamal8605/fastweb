@@ -4,7 +4,7 @@ import api from "@/lib/axios";
 export interface Product {
   id: number;
   name: string;
-  sku: string;
+  sku: string | null;
   /** Nested brand object as returned by the API */
   brand?: { id: number; name: string; slug: string } | null;
   /** Nested category object as returned by the API */
@@ -12,17 +12,17 @@ export interface Product {
   current_price: number | null;
   sale_price: number | null;
   regular_price: number | null;
-  on_sale: boolean;
+  on_sale: boolean | null;
   in_stock: boolean;
   stock_quantity: number | null;
   prices_visible: boolean;
   image: string | null;
-  type: "simple" | "grouped";
+  type: "simple" | "variable" | "grouped";
   parent_id?: number | null;
   children?: Product[];
   description?: string;
   short_description?: string;
-  attributes?: Record<string, string>;
+  attributes?: Record<string, string> | null;
   images?: { url: string; is_primary: boolean }[];
 }
 
@@ -42,6 +42,7 @@ export interface ProductsResponse {
 
 export interface ProductsParams {
   category_id?: number | string;
+  sub_category_id?: number | string;
   brand_id?: number | string;
   in_stock?: boolean;
   search?: string;
@@ -74,7 +75,7 @@ export function useProducts(params: ProductsParams = {}) {
         .get<ProductsResponse>("/products", {
           params: {
             ...params,
-            in_stock: params.in_stock ? true : undefined,
+            in_stock: params.in_stock,
           },
         })
         .then((r) => ({ ...r.data, data: r.data.data.map(normalizeProduct) })),
@@ -84,10 +85,11 @@ export function useProducts(params: ProductsParams = {}) {
 }
 
 export function useProduct(id: number | string) {
+  const enabled = Number.isInteger(Number(id)) && Number(id) > 0;
   return useQuery<Product>({
     queryKey: ["product", id],
     queryFn: () =>
       api.get<Product>(`/products/${id}`).then((r) => normalizeProduct(r.data)),
-    enabled: !!id,
+    enabled,
   });
 }

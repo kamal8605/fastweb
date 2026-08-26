@@ -79,7 +79,7 @@ export function UtilityBar() {
       <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-4 px-4 py-5 lg:flex-nowrap lg:gap-8 lg:px-10">
         <Logo size={48} />
         {isAuthenticated && (
-          <form onSubmit={handleSearch} className="order-3 flex w-full overflow-hidden rounded-lg border border-brand-line bg-white shadow-sm transition-all focus-within:border-brand-blue focus-within:ring-2 focus-within:ring-brand-blue/15 lg:order-none lg:mx-auto lg:max-w-[720px]">
+          <form onSubmit={handleSearch} className="order-3 flex w-full overflow-hidden rounded-none border border-brand-line bg-white shadow-sm transition-all focus-within:border-brand-blue focus-within:ring-2 focus-within:ring-brand-blue/15 lg:order-none lg:mx-auto lg:max-w-[720px]">
             <label htmlFor="site-search" className="sr-only">Search products, brands, or categories</label>
             <input id="site-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search for products, brands or categories" className="h-12 min-w-0 flex-1 px-4 text-sm text-brand-ink outline-none placeholder:text-brand-muted" />
             <button type="submit" className="flex w-14 items-center justify-center border-l border-brand-navy bg-brand-navy text-white transition-colors hover:border-brand-blue hover:bg-brand-blue focus:outline-none focus-visible:bg-brand-blue" aria-label="Search"><Search size={21} /></button>
@@ -89,15 +89,15 @@ export function UtilityBar() {
         <div className="ml-auto flex items-center gap-2 sm:gap-4">
           {isAuthenticated ? (
             <>
-              <Link href="/wishlist" className="hidden min-h-12 flex-col items-center justify-center gap-1 rounded-lg px-3 text-[10px] font-bold uppercase text-brand-muted no-underline transition-colors hover:bg-brand-orange-soft hover:text-brand-orange sm:flex"><Heart size={21} /><span>Wishlist</span></Link>
-              <div className="rounded-lg border border-brand-navy bg-brand-navy px-3 py-2.5 shadow-sm transition-colors hover:bg-brand-blue-deep"><UserAccountMenu /></div>
+              <Link href="/wishlist" className="hidden min-h-12 flex-col items-center justify-center gap-1 rounded-none px-3 text-[10px] font-bold uppercase text-brand-muted no-underline transition-colors hover:bg-brand-orange-soft hover:text-brand-orange sm:flex"><Heart size={21} /><span>Wishlist</span></Link>
+              <div className="rounded-none border border-brand-navy bg-brand-navy px-3 py-2.5 shadow-sm transition-colors hover:bg-brand-blue-deep"><UserAccountMenu /></div>
             </>
           ) : (
             <Link href="/login" className="inline-flex items-center gap-2 rounded-[var(--brand-radius)] bg-brand-navy px-4 py-3 text-xs font-bold uppercase text-white no-underline"><UserRound size={17} /> Login</Link>
           )}
           {isAuthenticated && (
-            <Link href="/cart" className="group relative flex min-h-12 items-center gap-3 rounded-lg border border-brand-line bg-brand-bg-alt px-3 text-brand-navy no-underline shadow-sm transition-all hover:border-brand-blue hover:bg-white" aria-label={`${itemCount} items in cart`}>
-              <span className="relative transition-colors group-hover:text-brand-blue"><ShoppingCart size={26} />{itemCount > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-black text-white">{itemCount}</span>}</span>
+            <Link href="/cart" className="group relative flex min-h-12 items-center gap-3 rounded-none border border-brand-line bg-brand-bg-alt px-3 text-brand-navy no-underline shadow-sm transition-all hover:border-brand-blue hover:bg-white" aria-label={`${itemCount} items in cart`}>
+              <span className="relative transition-colors group-hover:text-brand-blue"><ShoppingCart size={26} />{itemCount > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-none bg-brand-orange px-1 text-[10px] font-black text-white">{itemCount}</span>}</span>
               <span className="hidden flex-col sm:flex"><span className="text-[10px] font-bold uppercase text-brand-muted">Cart</span><span className="text-sm font-black text-brand-navy">${subtotal.toFixed(2)}</span></span>
             </Link>
           )}

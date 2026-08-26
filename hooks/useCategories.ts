@@ -23,9 +23,10 @@ export function useCategories() {
 }
 
 export function useCategory(id: number | string) {
+  const enabled = Number.isInteger(Number(id)) && Number(id) > 0;
   return useQuery<Category>({
     queryKey: ["category", id],
     queryFn: () => api.get<Category>(`/categories/${id}`).then((r) => r.data),
-    enabled: !!id,
+    enabled,
   });
 }

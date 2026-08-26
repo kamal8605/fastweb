@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, Plus, Pencil, X } from "lucide-react";
@@ -24,7 +24,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
           <div key={label} className="flex items-center">
             <div className="flex items-center gap-2 px-4 py-2.5">
               <span
-                className={`w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] shrink-0 ${
+                className={`w-5 h-5 rounded-none flex items-center justify-center font-mono text-[10px] shrink-0 ${
                   active
                     ? "bg-brand-orange text-white"
                     : done
@@ -109,7 +109,7 @@ function AddressCard({
             <Pencil size={11} />
           </button>
           {selected && (
-            <span className="w-5 h-5 bg-brand-orange rounded-full flex items-center justify-center">
+            <span className="w-5 h-5 bg-brand-orange rounded-none flex items-center justify-center">
               <Check size={11} className="text-white" />
             </span>
           )}
@@ -146,7 +146,7 @@ function AddressSelector({
         <p className="font-mono text-[12px] text-brand-muted mb-3">No saved addresses.</p>
       )}
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
+      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {addresses.map((addr) => (
           <AddressCard
             key={addr.id}
@@ -343,7 +343,7 @@ interface ModalState {
 }
 
 export default function CheckoutPage() {
-  const { isLoading } = useRequireApproved();
+  const { isLoading, isAuthenticated, isApproved } = useRequireApproved();
   const { user } = useAuth();
   const { items, subtotal, clearCart } = useCart();
   const { data: addresses = [] } = useAddresses();
@@ -355,6 +355,21 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalState | null>(null);
+
+  useEffect(() => {
+    if (addresses.length === 0) return;
+    const timer = window.setTimeout(() => {
+      const fallback = addresses.find((address) => address.is_default) ?? addresses[0];
+      setBillingAddr((current) =>
+        current ? addresses.find((address) => address.id === current.id) ?? fallback : fallback
+      );
+      setShippingAddr((current) =>
+        current ? addresses.find((address) => address.id === current.id) ?? fallback : fallback
+      );
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [addresses]);
 
   function openAddModal(onSave: (addr: Address) => void) {
     setModal({ onSave });
@@ -371,7 +386,7 @@ export default function CheckoutPage() {
     });
   }
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated || !isApproved) {
     return (
       <div className="flex items-center justify-center h-60 font-mono text-[11px] text-brand-muted tracking-widest uppercase">
         Loading…
@@ -453,7 +468,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="px-8 py-6 flex gap-6 max-w-[1400px] mx-auto items-start">
+      <div className="mx-auto flex max-w-[1400px] flex-col items-start gap-6 px-4 py-6 sm:px-8 lg:flex-row">
         {/* Left — form sections */}
         <div className="flex-1 min-w-0 space-y-8">
           {/* Billing address */}
@@ -544,7 +559,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* Right — summary */}
-        <div className="w-[300px] shrink-0 bg-brand-white border border-brand-line">
+        <div className="w-full shrink-0 border border-brand-line bg-brand-white lg:w-[300px]">
           <div className="px-5 py-4 border-b border-brand-ink">
             <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-brand-muted">
               Order summary

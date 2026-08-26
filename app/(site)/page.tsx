@@ -259,7 +259,7 @@ function ProductCard({
             </span>
 
             {canAdd && product ? (
-              <button type="button" onClick={handleAddToCart} className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-none border border-brand-navy bg-brand-navy text-white shadow-sm transition-all duration-200 hover:scale-105 hover:border-brand-blue hover:bg-brand-blue hover:shadow-md focus:border-brand-blue focus:bg-brand-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2" aria-label={`Add ${title} to cart`} title="Add to cart">
+              <button type="button" onClick={handleAddToCart} className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-none border border-brand-navy bg-brand-navy text-white shadow-sm transition-all duration-200 hover:border-brand-blue hover:bg-brand-blue hover:shadow-md focus:border-brand-blue focus:bg-brand-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2" aria-label={`Add ${title} to cart`} title="Add to cart">
                 <AddToCartIcon />
               </button>
             ) : (
@@ -293,7 +293,7 @@ function HeroPromos() {
           <BannerVisual title="Haze Collection" subtitle="Premium wholesale inventory for fast moving counters." />
           <span
             aria-hidden
-            className="absolute right-5 top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-brand-ink/80 text-white transition-colors group-hover:bg-brand-ink md:flex"
+            className="absolute right-5 top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-none bg-brand-ink/80 text-white transition-colors group-hover:bg-brand-ink md:flex"
           >
             <ChevronRight size={28} />
           </span>
@@ -308,7 +308,7 @@ function HeroPromos() {
           />
           <span
             aria-hidden
-            className="absolute right-5 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-brand-ink/85 text-white transition-colors group-hover:bg-brand-ink md:flex"
+            className="absolute right-5 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-none bg-brand-ink/85 text-white transition-colors group-hover:bg-brand-ink md:flex"
           >
             <ChevronRight size={24} />
           </span>

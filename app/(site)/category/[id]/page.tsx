@@ -10,7 +10,8 @@ interface Props {
 }
 
 function CategoryBrowse({ id }: { id: string }) {
-  const { data: category, isLoading } = useCategory(id);
+  const { data: category, isLoading, isError, refetch } = useCategory(id);
+  const numericId = Number(id);
 
   if (isLoading) {
     return (
@@ -20,9 +21,18 @@ function CategoryBrowse({ id }: { id: string }) {
     );
   }
 
+  if (!Number.isInteger(numericId) || numericId <= 0 || isError || !category) {
+    return (
+      <div className="flex h-60 flex-col items-center justify-center gap-4 text-center">
+        <p className="font-mono text-[12px] text-brand-muted">Category not found.</p>
+        {isError && <button type="button" onClick={() => refetch()} className="bg-brand-navy px-5 py-2 text-xs font-bold text-white">Try again</button>}
+      </div>
+    );
+  }
+
   return (
     <BrowseLayout
-      categoryId={Number(id)}
+      categoryId={numericId}
       categoryName={category?.name}
       subCategories={category?.children ?? []}
       crumbs={[

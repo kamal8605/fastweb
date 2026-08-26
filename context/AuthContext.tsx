@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import api from "@/lib/axios";
+import api, { AUTH_EXPIRED_EVENT } from "@/lib/axios";
 import queryClient from "@/lib/queryClient";
 import { clearStoredCart } from "@/context/CartContext";
 
@@ -18,7 +18,7 @@ export interface User {
   email: string;
   phone?: string | null;
   address?: string | null;
-  approval_status: "pending" | "approved" | "rejected";
+  approval_status?: "pending" | "approved" | "rejected";
   erp_contact_id?: number | null;
   orders_count?: number;
   prices_visible?: boolean;
@@ -37,15 +37,43 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function getStoredAuthToken() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("auth_token");
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(getStoredAuthToken);
-  const [isLoading, setIsLoading] = useState(() => getStoredAuthToken() !== null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Read browser-only auth state after hydration so the first server and client
+  // renders always match.
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const storedToken = localStorage.getItem("auth_token");
+      if (storedToken) {
+        setToken(storedToken);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    function clearExpiredSession() {
+      localStorage.removeItem("auth_token");
+      clearStoredCart();
+      setToken(null);
+      setUser(null);
+      setIsLoading(false);
+      queryClient.clear();
+    }
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, clearExpiredSession);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, clearExpiredSession);
+  }, []);
 
   // Validate a stored token by fetching the current user.
   useEffect(() => {
@@ -80,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("auth_token", access_token);
     setToken(access_token);
     setUser(userData);
+    setIsLoading(false);
     queryClient.invalidateQueries({ queryKey: ["products"] });
   }, []);
 
@@ -107,7 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         isLoading,
         isAuthenticated: !!user,
-        isApproved: user?.approval_status === "approved",
+        // Pending accounts cannot log in according to the API contract. Older
+        // API responses do not include approval_status, so an authenticated
+        // user is approved unless the API explicitly says otherwise.
+        isApproved:
+          !!user &&
+          user.approval_status !== "pending" &&
+          user.approval_status !== "rejected",
         login,
         logout,
         updateUser,
