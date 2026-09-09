@@ -65,11 +65,11 @@ export function NavBar() {
   const activeMobileGroup = groups.find((group) => group.label === mobileSection);
 
   return (
-    <nav className="sticky top-0 z-40 border-b-[3px] border-brand-orange bg-brand-navy text-white shadow-[0_4px_14px_rgba(11,31,58,0.18)]">
-      <div className="mx-auto hidden max-w-[1500px] items-stretch justify-center xl:flex">
+    <nav className="sticky top-0 z-40 w-full min-w-0 overflow-x-clip border-b-[3px] border-brand-orange bg-brand-navy text-white shadow-[0_4px_14px_rgba(11,31,58,0.18)]">
+      <div className="mx-auto hidden w-full max-w-[1500px] min-w-0 items-stretch justify-center px-2 xl:flex">
         {groups.map((group) => (
           <div key={group.label} className="static" onMouseEnter={() => setOpenMenu(group.label)} onMouseLeave={() => setOpenMenu(null)}>
-            <button type="button" onClick={() => setOpenMenu((value) => (value === group.label ? null : group.label))} onFocus={() => setOpenMenu(group.label)} className="flex h-full items-center gap-1 border-b-[3px] border-transparent px-3 py-4 text-[11px] font-extrabold uppercase tracking-[0.04em] transition-colors hover:border-brand-orange hover:bg-brand-blue-deep" aria-expanded={openMenu === group.label}>
+            <button type="button" onClick={() => setOpenMenu((value) => (value === group.label ? null : group.label))} onFocus={() => setOpenMenu(group.label)} className="flex h-full items-center gap-1 whitespace-nowrap border-b-[3px] border-transparent px-2.5 py-4 text-[10px] font-extrabold uppercase tracking-[0.03em] transition-colors hover:border-brand-orange hover:bg-brand-blue-deep 2xl:px-3 2xl:text-[11px] 2xl:tracking-[0.04em]" aria-expanded={openMenu === group.label}>
               {group.label}<ChevronDown size={12} />
             </button>
             {openMenu === group.label && (
@@ -103,7 +103,7 @@ export function NavBar() {
         ))}
 
         <div className="static" onMouseEnter={() => setOpenMenu("brands")} onMouseLeave={() => setOpenMenu(null)}>
-          <button type="button" onClick={() => setOpenMenu((value) => (value === "brands" ? null : "brands"))} className="flex h-full items-center gap-1 border-b-[3px] border-transparent px-3 py-4 text-[11px] font-extrabold uppercase tracking-[0.04em] hover:border-brand-orange hover:bg-brand-blue-deep">
+          <button type="button" onClick={() => setOpenMenu((value) => (value === "brands" ? null : "brands"))} className="flex h-full items-center gap-1 whitespace-nowrap border-b-[3px] border-transparent px-2.5 py-4 text-[10px] font-extrabold uppercase tracking-[0.03em] hover:border-brand-orange hover:bg-brand-blue-deep 2xl:px-3 2xl:text-[11px] 2xl:tracking-[0.04em]">
             Shop By Brand <ChevronDown size={12} />
           </button>
           {openMenu === "brands" && (
@@ -123,8 +123,8 @@ export function NavBar() {
             </div>
           )}
         </div>
-        <Link href="/sale" className="flex items-center border-b-[3px] border-transparent px-3 py-4 text-[11px] font-black uppercase tracking-[0.04em] text-brand-orange no-underline hover:border-brand-orange hover:bg-brand-blue-deep hover:text-white">Clearance</Link>
-        <Link href="/shop" className="flex items-center border-b-[3px] border-transparent px-3 py-4 text-[11px] font-black uppercase tracking-[0.04em] text-white no-underline hover:border-brand-orange hover:bg-brand-blue-deep">Shop All</Link>
+        <Link href="/sale" className="flex items-center whitespace-nowrap border-b-[3px] border-transparent px-2.5 py-4 text-[10px] font-black uppercase tracking-[0.03em] text-brand-orange no-underline hover:border-brand-orange hover:bg-brand-blue-deep hover:text-white 2xl:px-3 2xl:text-[11px]">Clearance</Link>
+        <Link href="/shop" className="flex items-center whitespace-nowrap border-b-[3px] border-transparent px-2.5 py-4 text-[10px] font-black uppercase tracking-[0.03em] text-white no-underline hover:border-brand-orange hover:bg-brand-blue-deep 2xl:px-3 2xl:text-[11px]">Shop All</Link>
       </div>
 
       <div className="flex items-center justify-between px-4 py-3 xl:hidden">
