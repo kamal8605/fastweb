@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* ── Forge & Co. theme (default) ─────────────────────────────── */
-html[data-theme="forge"] {
+/* ── Central Smoke Distro theme (default) ───────────────────── */
+html[data-theme="central"] {
   --brand-bg:          #F7F4EE;
   --brand-bg-alt:      #EFEAE0;
   --brand-ink:         #0A0A0A;

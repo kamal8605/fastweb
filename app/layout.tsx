@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme={process.env.NEXT_PUBLIC_THEME ?? "forge"}
+      data-theme={process.env.NEXT_PUBLIC_THEME ?? "central"}
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-brand-bg text-brand-ink">
