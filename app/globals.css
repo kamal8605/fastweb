@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /* ── Central Smoke Distro theme (default) ───────────────────── */
-html[data-theme="central"] {
+html[data-theme="central"],
+html[data-theme="forge"] {
   --brand-bg:          #F7F4EE;
   --brand-bg-alt:      #EFEAE0;
   --brand-ink:         #0A0A0A;

@@ -23,8 +23,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_COMPANY_NAME ?? "Central Smoke Distro",
-  description: "B2B wholesale ecommerce for indie retail buyers.",
+  title: "Disposable Vape Distributor in White Plains - Central Smoke Distro",
+  description:
+    "Central Smoke Distro is a wholesale distributor of disposable vapes and smoke shop essentials in White Plains.",
 };
 
 export default function RootLayout({
