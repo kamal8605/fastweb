@@ -18,7 +18,7 @@ const COLUMNS = [
       { label: "My Account", href: "/account/profile" },
       { label: "Track your Order", href: "/orders" },
       { label: "Category Directory", href: "/shop" },
-      { label: "Contact Us", href: "mailto:support@forgesmokedistro.com" },
+      { label: "Contact Us", href: "mailto:support@centralsmokedistro.com" },
     ],
   },
 ];
@@ -38,7 +38,7 @@ const linkClass =
   "text-brand-muted no-underline transition-colors hover:text-brand-orange focus-visible:text-brand-orange";
 
 export function Footer() {
-  const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME ?? "Forge & Co.";
+  const companyName = process.env.NEXT_PUBLIC_COMPANY_NAME ?? "Central Smoke Distro";
   const year = new Date().getFullYear();
 
   return (
@@ -65,9 +65,9 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-[1760px] gap-x-10 gap-y-10 px-6 py-10 sm:grid-cols-2 lg:grid-cols-[210px_1.35fr_0.9fr_1fr_1.25fr] lg:px-10 lg:py-11 xl:grid-cols-[210px_340px_230px_250px_330px] xl:justify-between">
+      <div className="mx-auto grid max-w-[1760px] gap-x-10 gap-y-10 px-6 py-10 sm:grid-cols-2 lg:grid-cols-3 lg:px-10 lg:py-11 xl:grid-cols-[1fr_1.45fr_0.9fr_1fr_1.35fr] 2xl:grid-cols-[210px_340px_230px_250px_330px] 2xl:justify-between">
         <div className="sm:col-span-2 lg:col-span-1">
-          <Logo size={58} />
+          <Logo size={110} />
           <p className="mt-5 max-w-[230px] text-[15px] leading-7 text-brand-muted">
             A wholesale marketplace built for independent retailers. 600+ vetted brands,
             one invoice, sixty-day terms.
@@ -84,11 +84,11 @@ export function Footer() {
               </li>
               <li className="flex gap-3">
                 <Mail size={18} strokeWidth={1.8} className="mt-0.5 shrink-0 text-brand-navy" />
-                <a href="mailto:info@forgesmokedistro.com" className={`${linkClass} min-w-0 break-words`}>info@forgesmokedistro.com</a>
+                <a href="mailto:info@centralsmokedistro.com" className={`${linkClass} min-w-0 break-words`}>info@centralsmokedistro.com</a>
               </li>
               <li className="flex gap-3">
                 <Mail size={18} strokeWidth={1.8} className="mt-0.5 shrink-0 text-brand-navy" />
-                <a href="mailto:support@forgesmokedistro.com" className={`${linkClass} min-w-0 break-words`}>support@forgesmokedistro.com</a>
+                <a href="mailto:support@centralsmokedistro.com" className={`${linkClass} min-w-0 break-words`}>support@centralsmokedistro.com</a>
               </li>
               <li className="flex gap-3">
                 <MapPin size={18} strokeWidth={1.8} className="mt-0.5 shrink-0 text-brand-navy" />

@@ -122,7 +122,7 @@ function SectionBanner({ title, tone = "orange" }: { title: string; tone?: "oran
         : "from-[#FFB84F] via-brand-orange to-[#7BBDE8]";
 
   return (
-    <div className={`my-7 flex h-16 items-center justify-center overflow-hidden bg-gradient-to-r ${palette}`}>
+    <div className={`relative my-7 flex h-16 items-center justify-center overflow-hidden bg-gradient-to-r ${palette}`}>
       <div className="absolute h-16 w-full opacity-20 [background-image:repeating-linear-gradient(90deg,white_0_18px,transparent_18px_38px)]" />
       <h2 className="relative text-center text-[28px] font-black uppercase italic text-white [text-shadow:0_2px_0_#0B1F3A] md:text-[42px]">
         {title}
@@ -164,7 +164,7 @@ function BrandLogo({ brand, index }: { brand?: Brand; index: number }) {
   return (
     <Link
       href={brand ? `/brand/${brand.id}` : "/brands"}
-      className="flex min-w-[130px] flex-col items-center gap-3 text-center no-underline"
+      className="flex min-w-0 flex-col items-center gap-3 text-center no-underline"
     >
       <div className="relative h-28 w-28 overflow-hidden rounded-full border border-brand-line bg-brand-white shadow-sm">
         {brand?.image ? (
@@ -450,7 +450,7 @@ export default function HomePage() {
   const { data: trendingProducts } = useProducts({ in_stock: true, per_page: 14 });
 
   return (
-    <div className="bg-white">
+    <div className="w-full min-w-0 overflow-x-clip bg-white">
       <HeroPromos />
       <FeaturedBrands />
       <PromoGrid />
